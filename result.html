@@ -26,7 +26,7 @@
       max-width: 800px;
       margin: auto;
       white-space: pre-wrap;
-      word-break: break-word;
+      overflow-wrap: break-word;
     }
   </style>
 </head>
@@ -35,17 +35,14 @@
   <div class="report" id="result">加载中，请稍候...</div>
 
   <script>
-    // 读取 URL 参数中的分析文本
     const params = new URLSearchParams(window.location.search);
     const text = params.get("text");
-
     const resultDiv = document.getElementById("result");
 
     if (text) {
       try {
-        // 解码（确保格式正常显示）
         const decoded = decodeURIComponent(text);
-        resultDiv.textContent = decoded;
+        resultDiv.innerHTML = decoded.replace(/\n/g, "<br>"); // 可选：换行美化
       } catch (e) {
         resultDiv.innerHTML = "<span style='color:red;'>结果解析失败，请重试</span>";
       }
