@@ -28,7 +28,7 @@
       box-shadow: 0 0 20px rgba(167, 139, 250, 0.3);
       max-width: 800px;
       width: 100%;
-      white-space: pre-wrap;
+      white-space: normal;
       line-height: 1.8;
     }
   </style>
@@ -38,19 +38,15 @@
   <div class="result-box" id="result">正在加载，请稍候...</div>
 
   <script>
-    fetch("/api/content.json")
-      .then(response => response.json())
-      .then(data => {
-        const box = document.getElementById("result");
-        if (data && data.content) {
-          box.textContent = data.content;
-        } else {
-          box.textContent = "未找到分析内容，请返回重新提交。";
-        }
-      })
-      .catch(error => {
-        document.getElementById("result").textContent = "加载失败：" + error;
-      });
+    const query = new URLSearchParams(window.location.search);
+    const result = query.get("text");
+    const box = document.getElementById("result");
+
+    if (result) {
+      box.innerHTML = decodeURIComponent(result).replace(/\n/g, "<br>");
+    } else {
+      box.textContent = "未找到分析内容，请返回重新提交。";
+    }
   </script>
 </body>
 </html>
