@@ -68,22 +68,22 @@
     <h2>个性命盘分析</h2>
     <p>结合八字、人类图、星座、MBTI，探索你的真实个性</p>
 
-    <form id="analysis-form">
+    <form action="https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8?redirect=loading.html" method="POST">
       <div class="form-group">
         <label for="birth-date">出生日期</label>
-        <input type="date" id="birth-date" required />
+        <input type="date" id="birth-date" name="birth_date" required />
       </div>
       <div class="form-group">
         <label for="birth-time">出生时间</label>
-        <input type="time" id="birth-time" required />
+        <input type="time" id="birth-time" name="birth_time" required />
       </div>
       <div class="form-group">
         <label for="birth-city">出生城市</label>
-        <input type="text" id="birth-city" placeholder="如：北京、上海、广州" required />
+        <input type="text" id="birth-city" name="birth_city" placeholder="如：北京、上海、广州" required />
       </div>
       <div class="form-group">
         <label for="mbti">MBTI类型</label>
-        <select id="mbti" required>
+        <select id="mbti" name="mbti" required>
           <option value="">选择您的MBTI类型</option>
           <option>INFP</option><option>INFJ</option>
           <option>ENFP</option><option>ENFJ</option>
@@ -98,39 +98,5 @@
       <button type="submit">开始分析</button>
     </form>
   </div>
-
-  <script>
-    document.getElementById("analysis-form").addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const birthDate = document.getElementById("birth-date").value;
-      const birthTime = document.getElementById("birth-time").value;
-      const birthCity = document.getElementById("birth-city").value;
-      const mbti = document.getElementById("mbti").value;
-
-      const webhookUrl = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";
-
-      try {
-        const res = await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            birth_date: birthDate,
-            birth_time: birthTime,
-            birth_city: birthCity,
-            mbti: mbti
-          })
-        });
-
-        if (res.ok) {
-          window.location.href = "loading.html";
-        } else {
-          alert("提交失败，请稍后再试！");
-        }
-      } catch (err) {
-        alert("网络错误，无法提交信息。");
-      }
-    });
-  </script>
 </body>
 </html>
