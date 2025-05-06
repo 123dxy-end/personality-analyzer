@@ -39,12 +39,12 @@
 
   <script>
     const inputData = {
-      birthday: "1990-01-01",  // 示例数据
+      birthday: "1990-01-01",  // 示例数据（你可替换为动态）
       mbti: "INFP",
       location: "北京"
     };
 
-    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url";
+    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url"; // ← 替换为你的真实地址
 
     fetch(webhookURL, {
       method: "POST",
@@ -52,11 +52,19 @@
         "Content-Type": "application/json"
       },
       body: JSON.stringify(inputData),
-      redirect: "follow" // 让浏览器自动跟随 302
+      redirect: "manual" // ❗️必须为 manual，才能手动读取 302 跳转地址
     })
     .then(response => {
-      // ✅ 浏览器自动跳转，不处理 response 内容
-      // 这里不需要判断 response.redirected，也不需要拿到 URL
+      if (response.status === 302) {
+        const redirectUrl = response.headers.get("Location");
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          throw new Error("未获取到重定向地址");
+        }
+      } else {
+        throw new Error("未返回 302 状态码");
+      }
     })
     .catch(error => {
       console.error("出错了:", error);
