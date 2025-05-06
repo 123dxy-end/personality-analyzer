@@ -15,7 +15,7 @@
     h1 {
       color: #d1b2ff;
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
     }
 
     .report {
@@ -28,26 +28,72 @@
       white-space: pre-wrap;
       overflow-wrap: break-word;
     }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 40px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      background-color: #7a5df0;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #a88bff;
+    }
   </style>
 </head>
 <body>
   <h1>你的个性分析报告</h1>
   <div class="report" id="result">加载中，请稍候...</div>
 
+  <div class="button-group">
+    <a href="index.html" class="btn">← 返回首页</a>
+    <button class="btn" onclick="saveAsImage()">📷 保存为图片</button>
+  </div>
+
+  <!-- 引入 html2canvas 脚本 -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
   <script>
     const params = new URLSearchParams(window.location.search);
-    const text = params.get("text");
+    const raw = params.get("text");
     const resultDiv = document.getElementById("result");
 
-    if (text) {
+    if (raw) {
       try {
-        const decoded = decodeURIComponent(text);
-        resultDiv.innerHTML = decoded.replace(/\n/g, "<br>"); // 可选：换行美化
+        const decoded = decodeURIComponent(raw);
+        const safeHtml = decoded
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\n/g, "<br>");
+        resultDiv.innerHTML = safeHtml;
       } catch (e) {
         resultDiv.innerHTML = "<span style='color:red;'>结果解析失败，请重试</span>";
       }
     } else {
       resultDiv.innerHTML = "<span style='color:red;'>未能获取到分析内容</span>";
+    }
+
+    // 保存为图片
+    function saveAsImage() {
+      html2canvas(document.querySelector("#result")).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "分析报告.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
     }
   </script>
 </body>
