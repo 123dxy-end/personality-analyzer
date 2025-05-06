@@ -1,1 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>个性命盘分析</title>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #2e2b5a, #1c1b2e);
+      color: #fff;
+      font-family: "Helvetica Neue", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .form-container {
+      background-color: #2a2542;
+      padding: 40px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.4);
+    }
+    .form-container h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .form-container p {
+      text-align: center;
+      font-size: 0.9rem;
+      margin-bottom: 30px;
+      color: #b3b3cc;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    input, select {
+      background-color: #423c6d;
+      color: white;
+    }
+    button {
+      background: linear-gradient(to right, #a16eff, #7657ff);
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+    button:hover {
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>个性命盘分析</h2>
+    <p>结合八字、人类图、星座、MBTI，探索你的真实个性</p>
 
+    <form id="analysis-form">
+      <div class="form-group">
+        <label for="birth-date">出生日期</label>
+        <input type="date" id="birth-date" required />
+      </div>
+      <div class="form-group">
+        <label for="birth-time">出生时间</label>
+        <input type="time" id="birth-time" required />
+      </div>
+      <div class="form-group">
+        <label for="birth-city">出生城市</label>
+        <input type="text" id="birth-city" placeholder="如：北京、上海、广州" required />
+      </div>
+      <div class="form-group">
+        <label for="mbti">MBTI类型</label>
+        <select id="mbti" required>
+          <option value="">选择您的MBTI类型</option>
+          <option>INFP</option><option>INFJ</option>
+          <option>ENFP</option><option>ENFJ</option>
+          <option>INTP</option><option>INTJ</option>
+          <option>ENTP</option><option>ENTJ</option>
+          <option>ISFP</option><option>ISFJ</option>
+          <option>ESFP</option><option>ESFJ</option>
+          <option>ISTP</option><option>ISTJ</option>
+          <option>ESTP</option><option>ESTJ</option>
+        </select>
+      </div>
+      <button type="submit">开始分析</button>
+    </form>
+  </div>
+
+  <script>
+    document.getElementById("analysis-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const birthDate = document.getElementById("birth-date").value;
+      const birthTime = document.getElementById("birth-time").value;
+      const birthCity = document.getElementById("birth-city").value;
+      const mbti = document.getElementById("mbti").value;
+
+      const webhookUrl = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsqiap59uc9quex8";
+
+      try {
+        const res = await fetch(webhookUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            birth_date: birthDate,
+            birth_time: birthTime,
+            birth_city: birthCity,
+            mbti: mbti
+          })
+        });
+
+        if (res.ok) {
+          window.location.href = "loading.html";
+        } else {
+          alert("提交失败，请稍后再试！");
+        }
+      } catch (err) {
+        alert("网络错误，无法提交信息。");
+      }
+    });
+  </script>
+</body>
+</html>
