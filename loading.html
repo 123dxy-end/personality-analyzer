@@ -3,25 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>分析中...</title>
+  <title>正在分析中...</title>
   <style>
     body {
       background: radial-gradient(circle at center, #2e2b5a, #1c1b2e);
-      color: #ffffff;
+      color: #fff;
       font-family: "Helvetica Neue", sans-serif;
-      margin: 0;
-      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      height: 100vh;
+      text-align: center;
     }
-    .spinner {
+    .loader {
       border: 6px solid #ccc;
-      border-top: 6px solid #a16eff;
+      border-top: 6px solid #a78bfa;
       border-radius: 50%;
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
       animation: spin 1s linear infinite;
       margin-bottom: 20px;
     }
@@ -29,22 +29,29 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    .message {
-      font-size: 20px;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    .subtext {
-      font-size: 14px;
-      color: #bcbcd3;
-      text-align: center;
-      max-width: 80%;
-    }
   </style>
 </head>
 <body>
-  <div class="spinner"></div>
-  <div class="message">正在分析中，请稍候...</div>
-  <div class="subtext">我们正在结合您的八字、人类图、星座和MBTI信息，生成您的个性分析报告</div>
+  <div class="loader"></div>
+  <h2>正在分析中，请稍候...</h2>
+  <p>我们正在结合您的八字、人类图、星座和MBTI信息，生成您的个性分析报告</p>
+
+  <script>
+    // 每隔2秒检查一次是否有结果返回（从 URL 参数中获取）
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(window.location.href);
+        const data = await res.json();
+
+        if (data && data.redirect) {
+          window.location.href = data.redirect;
+        }
+      } catch (e) {
+        console.log("等待分析结果中...");
+      }
+    };
+
+    setInterval(checkStatus, 2000); // 每2秒轮询一次
+  </script>
 </body>
 </html>
