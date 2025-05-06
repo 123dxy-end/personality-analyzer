@@ -38,28 +38,32 @@
   <p>请耐心等待，约 5-10 秒后自动跳转</p>
 
   <script>
-    // ✅ 你可以在这里收集用户表单的数据：
+    // 从本地存储中读取表单数据
     const inputData = {
-      birthday: "1990-01-01",  // 示例生日
-      mbti: "INFP",            // 示例 MBTI
-      location: "北京"         // 示例地点
+      birth_date: localStorage.getItem("birth_date"),
+      birth_time: localStorage.getItem("birth_time"),
+      birth_city: localStorage.getItem("birth_city"),
+      mbti: localStorage.getItem("mbti")
     };
 
-    // ✅ 替换为你自己的 Webhook 地址！
-    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url";
+    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url"; // ← 替换成你自己的 Webhook 链接
 
     fetch(webhookURL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(inputData)
+      body: JSON.stringify(inputData),
+      redirect: "follow"
     })
-    .then(response => response.json())
-    .then(data => {
-      const result = data.choices?.[0]?.message?.content || "分析结果出错了";
-      const encodedResult = encodeURIComponent(result);
-      window.location.href = `result.html?text=${encodedResult}`;
+    .then(response => {
+      if (response.redirected) {
+        // 成功：跳转到 result.html
+        window.location.href = response.url;
+      } else {
+        // 没跳转：说明可能出错
+        document.body.innerHTML = "<h2 style='color: red;'>出错了，请刷新重试</h2>";
+      }
     })
     .catch(error => {
       console.error("出错了:", error);
