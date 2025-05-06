@@ -24,7 +24,7 @@
       width: 60px;
       height: 60px;
       animation: spin 1s linear infinite;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
@@ -32,7 +32,6 @@
     }
     h2 {
       font-size: 24px;
-      margin: 0;
     }
     p {
       color: #ccc;
@@ -43,7 +42,7 @@
 <body>
   <div class="loader"></div>
   <h2>正在分析中，请稍候...</h2>
-  <p>我们正在结合您的八字、人类图、星座和 MBTI 信息，生成您的个性分析报告</p>
+  <p>我们正在结合您的八字、人类图、星座和MBTI信息，生成您的个性分析报告</p>
 
   <script>
     const query = new URLSearchParams(window.location.search);
@@ -52,7 +51,7 @@
     const birth_city = query.get("birth_city");
     const mbti = query.get("mbti");
 
-    const webhookUrl = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";
+    const webhookUrl = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8"; // 替换成你自己的 webhook 地址
 
     async function fetchResult() {
       try {
@@ -67,16 +66,18 @@
           })
         });
 
-        const data = await res.json();
+        const text = await res.text();
+        const json = JSON.parse(text);
 
-        if (data && data.content) {
-          const encoded = encodeURIComponent(data.content);
+        if (json && json.content) {
+          const encoded = encodeURIComponent(json.content);
           window.location.href = `result.html?text=${encoded}`;
         } else {
-          document.body.innerHTML = "<h2>出错：分析失败，请返回重试。</h2>";
+          document.body.innerHTML = "<h2>出错：未收到分析结果，请返回重试。</h2>";
         }
-      } catch (error) {
-        document.body.innerHTML = `<h2>网络错误：${error.message}</h2>`;
+      } catch (err) {
+        document.body.innerHTML = "<h2>网络错误，请稍后再试。</h2>";
+        console.error("分析失败：", err);
       }
     }
 
