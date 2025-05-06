@@ -10,11 +10,10 @@
       color: #fff;
       font-family: "Helvetica Neue", sans-serif;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
+      flex-direction: column;
       text-align: center;
     }
     .loader {
@@ -30,19 +29,20 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    h2 {
-      font-size: 24px;
+    #loading-text {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
     }
-    p {
+    #sub-text {
+      font-size: 0.9rem;
       color: #ccc;
-      font-size: 14px;
     }
   </style>
 </head>
 <body>
   <div class="loader"></div>
-  <h2>正在分析中，请稍候...</h2>
-  <p>我们正在结合您的八字、人类图、星座和MBTI信息，生成您的个性分析报告</p>
+  <div id="loading-text">正在分析中，请稍候...</div>
+  <div id="sub-text">我们正在结合您的八字、人类图、星座和MBTI信息，生成您的个性分析报告</div>
 
   <script>
     const query = new URLSearchParams(window.location.search);
@@ -51,37 +51,25 @@
     const birth_city = query.get("birth_city");
     const mbti = query.get("mbti");
 
-    const webhookUrl = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8"; // 替换成你自己的 webhook 地址
-
-    async function fetchResult() {
-      try {
-        const res = await fetch(webhookUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            birth_date,
-            birth_time,
-            birth_city,
-            mbti
-          })
-        });
-
-        const text = await res.text();
-        const json = JSON.parse(text);
-
-        if (json && json.content) {
-          const encoded = encodeURIComponent(json.content);
-          window.location.href = `result.html?text=${encoded}`;
-        } else {
-          document.body.innerHTML = "<h2>出错：未收到分析结果，请返回重试。</h2>";
-        }
-      } catch (err) {
-        document.body.innerHTML = "<h2>网络错误，请稍后再试。</h2>";
-        console.error("分析失败：", err);
-      }
-    }
-
-    fetchResult();
+    fetch("https://your-make-webhook-url", {  // ⬅️ 替换成你的 Webhook 地址
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        birth_date,
+        birth_time,
+        birth_city,
+        mbti
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const resultText = encodeURIComponent(data.content);
+      window.location.href = `result.html?text=${resultText}`;
+    })
+    .catch(err => {
+      document.getElementById("loading-text").textContent = "网络错误，请稍后再试。";
+      document.getElementById("sub-text").textContent = err.message;
+    });
   </script>
 </body>
 </html>
