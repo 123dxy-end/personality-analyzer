@@ -39,12 +39,13 @@
 
   <script>
     const inputData = {
-      birthday: "1990-01-01",  // 示例数据，可替换为用户提交的动态值
-      mbti: "INFP",
-      location: "北京"
+      birth_date: "1990-01-01",  // 示例数据（测试时可用）
+      birth_time: "12:00",
+      birth_city: "北京",
+      mbti: "INFP"
     };
 
-    const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";  // 你的真实地址
+    const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8"; // ← 替换成你的实际 webhook 地址
 
     fetch(webhookURL, {
       method: "POST",
@@ -58,7 +59,7 @@
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error("未获取到跳转地址");
+        throw new Error("未返回跳转链接");
       }
     })
     .catch(error => {
