@@ -9,41 +9,48 @@
       color: #b095ff;
       font-family: Arial, sans-serif;
       padding: 40px;
-      white-space: pre-wrap;
+      line-height: 1.8;
     }
+
     h1 {
-      color: #c9aaff;
+      color: #d1b2ff;
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 40px;
     }
-    .content {
-      background-color: #2a1a55;
+
+    .report {
+      background-color: #2a1b4d;
       padding: 30px;
       border-radius: 10px;
-      line-height: 1.8;
+      box-shadow: 0 0 10px #7a5df0;
+      max-width: 800px;
+      margin: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
   <h1>你的个性分析报告</h1>
-  <div class="content" id="report">
-    正在加载内容，请稍候...
-  </div>
+  <div class="report" id="result">加载中，请稍候...</div>
 
   <script>
-    function getQueryParam(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
-    }
+    // 读取 URL 参数中的分析文本
+    const params = new URLSearchParams(window.location.search);
+    const text = params.get("text");
 
-    const rawText = getQueryParam("text");
-    const decodedText = rawText ? decodeURIComponent(rawText) : null;
-    const reportBox = document.getElementById("report");
+    const resultDiv = document.getElementById("result");
 
-    if (decodedText) {
-      reportBox.textContent = decodedText;
+    if (text) {
+      try {
+        // 解码（确保格式正常显示）
+        const decoded = decodeURIComponent(text);
+        resultDiv.textContent = decoded;
+      } catch (e) {
+        resultDiv.innerHTML = "<span style='color:red;'>结果解析失败，请重试</span>";
+      }
     } else {
-      reportBox.innerHTML = "<span style='color: red;'>加载失败，请返回重试。</span>";
+      resultDiv.innerHTML = "<span style='color:red;'>未能获取到分析内容</span>";
     }
   </script>
 </body>
