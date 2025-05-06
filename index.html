@@ -68,7 +68,7 @@
     <h2>个性命盘分析</h2>
     <p>结合八字、人类图、星座、MBTI，探索你的真实个性</p>
 
-    <form action="https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8?redirect=loading.html" method="POST">
+    <form id="analysis-form">
       <div class="form-group">
         <label for="birth-date">出生日期</label>
         <input type="date" id="birth-date" name="birth_date" required />
@@ -98,5 +98,35 @@
       <button type="submit">开始分析</button>
     </form>
   </div>
+
+  <script>
+    document.getElementById("analysis-form").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      const birth_date = document.getElementById("birth-date").value;
+      const birth_time = document.getElementById("birth-time").value;
+      const birth_city = document.getElementById("birth-city").value;
+      const mbti = document.getElementById("mbti").value;
+
+      const data = {
+        birth_date,
+        birth_time,
+        birth_city,
+        mbti
+      };
+
+      // 跳转 loading 页面
+      window.location.href = "loading.html";
+
+      // 后台提交到 Webhook（把这行换成你的真实地址）
+      await fetch("https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+    });
+  </script>
 </body>
 </html>
