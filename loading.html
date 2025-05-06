@@ -38,15 +38,13 @@
   <p>请耐心等待，约 5-10 秒后自动跳转</p>
 
   <script>
-    // ✅ 用户输入数据（你可以改成从 URL 或表单获取）
     const inputData = {
-      birthday: "1990-01-01",
-      mbti: "INFP",
-      location: "北京"
+      birthday: "1990-01-01",  // 示例生日
+      mbti: "INFP",            // 示例 MBTI
+      location: "北京"         // 示例地点
     };
 
-    // ✅ Webhook 地址（请替换为你自己的）
-    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url";
+    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url";  // ✅ 替换成你的真实 Webhook 地址
 
     fetch(webhookURL, {
       method: "POST",
@@ -54,18 +52,13 @@
         "Content-Type": "application/json"
       },
       body: JSON.stringify(inputData),
-      redirect: "manual"  // ✅ 重要！防止浏览器自动跳转，保留 response.headers
+      redirect: "follow"  // ✅ 允许自动跳转
     })
     .then(response => {
-      if (response.status === 302) {
-        const redirectURL = response.headers.get("Location");
-        if (redirectURL) {
-          window.location.href = redirectURL;
-        } else {
-          throw new Error("没有找到跳转地址");
-        }
+      if (response.redirected) {
+        window.location.href = response.url;
       } else {
-        throw new Error("返回状态码不是 302");
+        throw new Error("没有重定向地址");
       }
     })
     .catch(error => {
