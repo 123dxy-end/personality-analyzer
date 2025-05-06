@@ -1,73 +1,49 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>分析结果</title>
+  <meta charset="UTF-8">
+  <title>你的个性分析报告</title>
   <style>
     body {
-      margin: 0;
-      font-family: "Microsoft YaHei", sans-serif;
-      background: linear-gradient(135deg, #1c1438, #271e49);
-      color: #ffffff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 40px 20px;
-      min-height: 100vh;
-    }
-
-    h1 {
-      color: #a78bfa;
-      font-size: 32px;
-      margin-bottom: 30px;
-      text-align: center;
-    }
-
-    .result-box {
-      background-color: #2c2254;
-      padding: 30px;
-      border-radius: 16px;
-      box-shadow: 0 0 20px rgba(167, 139, 250, 0.3);
-      max-width: 800px;
-      width: 100%;
-      line-height: 1.8;
+      background-color: #1a1133;
+      color: #b095ff;
+      font-family: Arial, sans-serif;
+      padding: 40px;
       white-space: pre-wrap;
-      animation: fadeIn 0.6s ease-in-out;
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    h1 {
+      color: #c9aaff;
+      text-align: center;
+      margin-bottom: 30px;
     }
-
-    @media (max-width: 600px) {
-      .result-box {
-        padding: 20px;
-        font-size: 15px;
-      }
+    .content {
+      background-color: #2a1a55;
+      padding: 30px;
+      border-radius: 10px;
+      line-height: 1.8;
     }
   </style>
 </head>
 <body>
   <h1>你的个性分析报告</h1>
-  <div class="result-box" id="result">正在加载，请稍候...</div>
+  <div class="content" id="report">
+    正在加载内容，请稍候...
+  </div>
 
   <script>
-    const query = new URLSearchParams(window.location.search);
-    const result = query.get("text");
-    const box = document.getElementById("result");
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
 
-    if (result) {
-      const decoded = decodeURIComponent(result);
-      // 显示换行符，并防止 HTML 注入
-      box.innerHTML = decoded
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\n/g, "<br>");
+    const rawText = getQueryParam("text");
+    const decodedText = rawText ? decodeURIComponent(rawText) : null;
+    const reportBox = document.getElementById("report");
+
+    if (decodedText) {
+      reportBox.textContent = decodedText;
     } else {
-      box.textContent = "未找到分析内容，请返回重新提交。";
+      reportBox.innerHTML = "<span style='color: red;'>加载失败，请返回重试。</span>";
     }
   </script>
 </body>
