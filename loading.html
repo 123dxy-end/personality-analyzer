@@ -35,16 +35,16 @@
 <body>
   <h2>正在生成你的专属人格分析报告...</h2>
   <div class="spinner"></div>
-  <p>请耐心等待，约 5-10 秒后自动跳转</p>
+  <p>请耐心等待，稍后自动跳转</p>
 
   <script>
     const inputData = {
-      birthday: "1990-01-01",  // 示例生日
-      mbti: "INFP",            // 示例 MBTI
-      location: "北京"         // 示例地点
+      birthday: "1990-01-01",  // 示例数据
+      mbti: "INFP",
+      location: "北京"
     };
 
-    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url";  // ✅ 替换成你的真实 Webhook 地址
+    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url";
 
     fetch(webhookURL, {
       method: "POST",
@@ -52,14 +52,11 @@
         "Content-Type": "application/json"
       },
       body: JSON.stringify(inputData),
-      redirect: "follow"  // ✅ 允许自动跳转
+      redirect: "follow" // 让浏览器自动跟随 302
     })
     .then(response => {
-      if (response.redirected) {
-        window.location.href = response.url;
-      } else {
-        throw new Error("没有重定向地址");
-      }
+      // ✅ 浏览器自动跳转，不处理 response 内容
+      // 这里不需要判断 response.redirected，也不需要拿到 URL
     })
     .catch(error => {
       console.error("出错了:", error);
