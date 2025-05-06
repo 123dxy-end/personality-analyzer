@@ -1,48 +1,70 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>分析中...</title>
+  <meta charset="UTF-8">
+  <title>正在生成你的专属人格分析报告...</title>
   <style>
     body {
-      margin: 0;
-      font-family: "Microsoft YaHei", sans-serif;
-      background: linear-gradient(135deg, #1c1438, #271e49);
-      color: #ffffff;
+      background-color: #1a1133;
+      color: #b095ff;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      text-align: center;
+      font-family: Arial, sans-serif;
     }
-    h1 {
-      color: #a78bfa;
-      font-size: 28px;
-      margin-bottom: 30px;
-    }
-    .loading-spinner {
+    .spinner {
+      margin-top: 20px;
       width: 60px;
       height: 60px;
-      border: 6px solid #a78bfa;
-      border-top: 6px solid transparent;
+      border: 8px solid #b095ff;
+      border-top: 8px solid transparent;
       border-radius: 50%;
       animation: spin 1s linear infinite;
-      margin-bottom: 20px;
     }
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     p {
-      font-size: 16px;
-      color: #ccc;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>正在生成你的专属人格分析报告...</h1>
-  <div class="loading-spinner"></div>
+  <h2>正在生成你的专属人格分析报告...</h2>
+  <div class="spinner"></div>
   <p>请耐心等待，约 5-10 秒后自动跳转</p>
+
+  <script>
+    // ✅ 你可以在这里收集用户表单的数据：
+    const inputData = {
+      birthday: "1990-01-01",  // 示例生日
+      mbti: "INFP",            // 示例 MBTI
+      location: "北京"         // 示例地点
+    };
+
+    // ✅ 替换为你自己的 Webhook 地址！
+    const webhookURL = "https://hook.us1.make.com/xxx-your-webhook-url";
+
+    fetch(webhookURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(inputData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      const result = data.choices?.[0]?.message?.content || "分析结果出错了";
+      const encodedResult = encodeURIComponent(result);
+      window.location.href = `result.html?text=${encodedResult}`;
+    })
+    .catch(error => {
+      console.error("出错了:", error);
+      document.body.innerHTML = "<h2 style='color: red;'>出错了，请刷新重试</h2>";
+    });
+  </script>
 </body>
 </html>
