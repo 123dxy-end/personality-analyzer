@@ -1,75 +1,64 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>正在分析中...</title>
   <style>
     body {
-      background: radial-gradient(circle at center, #2e2b5a, #1c1b2e);
+      margin: 0;
+      background: linear-gradient(135deg, #1c1438, #271e49);
       color: #fff;
-      font-family: "Helvetica Neue", sans-serif;
+      font-family: "Microsoft YaHei", sans-serif;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      flex-direction: column;
       text-align: center;
     }
-    .loader {
-      border: 6px solid #ccc;
-      border-top: 6px solid #a78bfa;
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      animation: spin 1s linear infinite;
+    h1 {
+      color: #a78bfa;
       margin-bottom: 20px;
     }
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid #a78bfa;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    #loading-text {
-      font-size: 1.5rem;
-      margin-bottom: 10px;
-    }
-    #sub-text {
-      font-size: 0.9rem;
-      color: #ccc;
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
-  <div class="loader"></div>
-  <div id="loading-text">正在分析中，请稍候...</div>
-  <div id="sub-text">我们正在结合您的八字、人类图、星座和MBTI信息，生成您的个性分析报告</div>
+  <h1>正在生成你的专属人格分析报告...</h1>
+  <div class="spinner"></div>
+  <p style="margin-top: 30px; color: #ccc;">请耐心等待，约 5-10 秒后自动跳转</p>
 
   <script>
-    const query = new URLSearchParams(window.location.search);
-    const birth_date = query.get("birth_date");
-    const birth_time = query.get("birth_time");
-    const birth_city = query.get("birth_city");
-    const mbti = query.get("mbti");
+    // 每隔1秒轮询后端是否生成好了结果
+    let retries = 0;
+    const maxRetries = 15;
 
-    fetch("https://your-make-webhook-url", {  // ⬅️ 替换成你的 Webhook 地址
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        birth_date,
-        birth_time,
-        birth_city,
-        mbti
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      const resultText = encodeURIComponent(data.content);
-      window.location.href = `result.html?text=${resultText}`;
-    })
-    .catch(err => {
-      document.getElementById("loading-text").textContent = "网络错误，请稍后再试。";
-      document.getElementById("sub-text").textContent = err.message;
-    });
+    function checkRedirect() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const text = urlParams.get("text");
+      if (text) {
+        window.location.href = `result.html?text=${encodeURIComponent(text)}`;
+      } else if (retries < maxRetries) {
+        retries++;
+        setTimeout(checkRedirect, 1000);
+      } else {
+        document.querySelector("h1").textContent = "生成超时，请刷新页面或稍后重试。";
+        document.querySelector(".spinner").style.display = "none";
+      }
+    }
+
+    checkRedirect();
   </script>
 </body>
 </html>
