@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>正在分析中...</title>
+  <title>分析中...</title>
   <style>
     body {
       margin: 0;
-      background: linear-gradient(135deg, #1c1438, #271e49);
-      color: #fff;
       font-family: "Microsoft YaHei", sans-serif;
+      background: linear-gradient(135deg, #1c1438, #271e49);
+      color: #ffffff;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -19,54 +19,30 @@
     }
     h1 {
       color: #a78bfa;
-      margin-bottom: 20px;
+      font-size: 28px;
+      margin-bottom: 30px;
     }
-    .spinner {
+    .loading-spinner {
       width: 60px;
       height: 60px;
       border: 6px solid #a78bfa;
-      border-top-color: transparent;
+      border-top: 6px solid transparent;
       border-radius: 50%;
       animation: spin 1s linear infinite;
+      margin-bottom: 20px;
     }
     @keyframes spin {
       to { transform: rotate(360deg); }
+    }
+    p {
+      font-size: 16px;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
   <h1>正在生成你的专属人格分析报告...</h1>
-  <div class="spinner"></div>
-  <p style="margin-top: 30px; color: #ccc;">请耐心等待，约 5-10 秒后自动跳转</p>
-
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const birth = params.get("birth");
-    const location = params.get("location");
-    const mbti = params.get("mbti");
-
-    fetch("https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        birth,
-        location,
-        mbti
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data && data.text) {
-        window.location.href = `result.html?text=${encodeURIComponent(data.text)}`;
-      } else {
-        document.querySelector("h1").textContent = "生成失败，返回内容异常。";
-        document.querySelector(".spinner").style.display = "none";
-      }
-    })
-    .catch(err => {
-      document.querySelector("h1").textContent = "网络错误：" + err;
-      document.querySelector(".spinner").style.display = "none";
-    });
-  </script>
+  <div class="loading-spinner"></div>
+  <p>请耐心等待，约 5-10 秒后自动跳转</p>
 </body>
 </html>
