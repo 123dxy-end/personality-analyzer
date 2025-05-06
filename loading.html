@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>正在分析中...</title>
   <style>
     body {
@@ -40,25 +40,33 @@
   <p style="margin-top: 30px; color: #ccc;">请耐心等待，约 5-10 秒后自动跳转</p>
 
   <script>
-    // 每隔1秒轮询后端是否生成好了结果
-    let retries = 0;
-    const maxRetries = 15;
+    const params = new URLSearchParams(window.location.search);
+    const birth = params.get("birth");
+    const location = params.get("location");
+    const mbti = params.get("mbti");
 
-    function checkRedirect() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const text = urlParams.get("text");
-      if (text) {
-        window.location.href = `result.html?text=${encodeURIComponent(text)}`;
-      } else if (retries < maxRetries) {
-        retries++;
-        setTimeout(checkRedirect, 1000);
+    fetch("https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        birth,
+        location,
+        mbti
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.text) {
+        window.location.href = `result.html?text=${encodeURIComponent(data.text)}`;
       } else {
-        document.querySelector("h1").textContent = "生成超时，请刷新页面或稍后重试。";
+        document.querySelector("h1").textContent = "生成失败，返回内容异常。";
         document.querySelector(".spinner").style.display = "none";
       }
-    }
-
-    checkRedirect();
+    })
+    .catch(err => {
+      document.querySelector("h1").textContent = "网络错误：" + err;
+      document.querySelector(".spinner").style.display = "none";
+    });
   </script>
 </body>
 </html>
