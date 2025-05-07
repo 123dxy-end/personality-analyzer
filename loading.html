@@ -37,16 +37,16 @@
   <p>请耐心等待，稍后自动跳转</p>
 
   <script>
-    // 1. 从首页存的 sessionStorage 里取值
+    // 从 sessionStorage 拿到用户填写的信息
     const birth_date  = sessionStorage.getItem('birth_date')  || '';
     const birth_time  = sessionStorage.getItem('birth_time')  || '';
     const birth_city  = sessionStorage.getItem('birth_city')  || '';
     const mbti        = sessionStorage.getItem('mbti')        || '';
 
-    // 2. Make Webhook 地址
+    // Make Webhook 地址
     const webhookURL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
 
-    // 3. POST 给 Make，拿 JSON
+    // 发请求给 Make
     fetch(webhookURL, {
       method: 'POST',
       headers: {
@@ -64,16 +64,15 @@
       return res.json();
     })
     .then(data => {
-      // 4. 确保拿到 result 字段
-      if (!data.result) {
-        throw new Error('返回数据中没有 result 字段');
-      }
-      // 5. 存下分析结果，然后跳转
+      if (!data.result) throw new Error('返回数据中没有 result 字段');
+      // 存下结果
       sessionStorage.setItem('analysisResult', data.result);
-      window.location.href = 'result.html';
+      // 延迟 10 秒后再跳转到结果页
+      setTimeout(() => {
+        window.location.href = 'result.html';
+      }, 10000); // 10000 毫秒 = 10 秒
     })
     .catch(err => {
-      // 6. 出错展示
       document.body.innerHTML = `
         <h2 style="color:red;">出错了：</h2>
         <pre style="color:#fff; background:#330033; padding:10px; border-radius:5px;">
