@@ -33,28 +33,21 @@
   <p>请耐心等待，稍后自动跳转</p>
 
   <script>
-    // —— 先尝试从首页提交里拿数据 ——  
+    // 先试着从首页拿四项数据
     let date = sessionStorage.getItem("birth_date");
     let time = sessionStorage.getItem("birth_time");
     let city = sessionStorage.getItem("birth_city");
     let mbti = sessionStorage.getItem("mbti");
 
-    // 如果上面任意一项没有，就使用下面的“测试默认值”
+    // 如果没拿到，就用测试默认值，保证能跑通
     if (!date || !time || !city || !mbti) {
-      console.log("没检测到表单数据，使用默认测试值");
       date = "1990-01-01";
       time = "12:00";
       city = "北京";
       mbti = "INFP";
     }
 
-    const inputData = {
-      birth_date: date,
-      birth_time: time,
-      birth_city: city,
-      mbti:       mbti
-    };
-
+    const inputData = { birth_date: date, birth_time: time, birth_city: city, mbti: mbti };
     const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";
 
     fetch(webhookURL, {
@@ -64,13 +57,20 @@
     })
     .then(res => res.json())
     .then(data => {
-      if (!data.result) throw new Error("没有拿到分析结果");
+      if (!data.result) throw new Error("返回结果中没有 result 字段");
+      // 存下结果，跳到展示页
       sessionStorage.setItem("analysisResult", data.result);
       window.location.href = "result.html";
     })
     .catch(err => {
-      console.error("出错了:", err);
-      document.body.innerHTML = "<h2 style='color: red;'>出错了，请刷新重试</h2>";
+      // 直接把 err.message 显示到页面上
+      document.body.innerHTML = `
+        <h2 style="color:red;">出错了：</h2>
+        <p style="color:white; background:#330033; padding:10px; border-radius:5px;">
+          ${err.message}
+        </p>
+      `;
+      console.error(err);
     });
   </script>
 </body>
