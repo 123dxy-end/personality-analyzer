@@ -17,17 +17,13 @@
     }
     .spinner {
       margin-top: 20px;
-      width: 60px;
-      height: 60px;
+      width: 60px; height: 60px;
       border: 8px solid #b095ff;
       border-top: 8px solid transparent;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     h2, p { margin: 10px 0; }
   </style>
 </head>
@@ -37,15 +33,28 @@
   <p>请耐心等待，稍后自动跳转</p>
 
   <script>
-    // —— 读取首页存的用户输入（四项） ——
+    // —— 先尝试从首页提交里拿数据 ——  
+    let date = sessionStorage.getItem("birth_date");
+    let time = sessionStorage.getItem("birth_time");
+    let city = sessionStorage.getItem("birth_city");
+    let mbti = sessionStorage.getItem("mbti");
+
+    // 如果上面任意一项没有，就使用下面的“测试默认值”
+    if (!date || !time || !city || !mbti) {
+      console.log("没检测到表单数据，使用默认测试值");
+      date = "1990-01-01";
+      time = "12:00";
+      city = "北京";
+      mbti = "INFP";
+    }
+
     const inputData = {
-      birth_date: sessionStorage.getItem("birth_date"),
-      birth_time: sessionStorage.getItem("birth_time"),
-      birth_city: sessionStorage.getItem("birth_city"),
-      mbti:       sessionStorage.getItem("mbti")
+      birth_date: date,
+      birth_time: time,
+      birth_city: city,
+      mbti:       mbti
     };
 
-    // 你的 Make Webhook 地址
     const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";
 
     fetch(webhookURL, {
@@ -53,18 +62,14 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(inputData)
     })
-    .then(response => response.json())            // 拿到 JSON
+    .then(res => res.json())
     .then(data => {
-      if (!data.result) {
-        throw new Error("没有拿到分析结果");
-      }
-      // 存到浏览器里，下一页拿来显示
+      if (!data.result) throw new Error("没有拿到分析结果");
       sessionStorage.setItem("analysisResult", data.result);
-      // 跳到结果页
       window.location.href = "result.html";
     })
-    .catch(error => {
-      console.error("出错了:", error);
+    .catch(err => {
+      console.error("出错了:", err);
       document.body.innerHTML = "<h2 style='color: red;'>出错了，请刷新重试</h2>";
     });
   </script>
