@@ -24,6 +24,9 @@
       box-shadow: 0 0 10px #7a5df0;
       max-width: 800px;
       margin: auto;
+    }
+    /* 用来截图的容器 */
+    #reportContainer {
       white-space: pre-wrap;
       word-break: break-word;
     }
@@ -51,36 +54,37 @@
 </head>
 <body>
   <h1>你的个性分析报告</h1>
-  <div class="report" id="result">加载中，请稍候...</div>
+
+  <div class="report" id="reportContainer">
+    <pre id="analysis">加载中，请稍候…</pre>
+  </div>
 
   <div class="button-group">
     <a href="index.html" class="btn">← 返回首页</a>
     <button class="btn" onclick="saveAsImage()">📷 保存为图片</button>
   </div>
 
-  <!-- html2canvas 用于截图保存 -->
+  <!-- html2canvas 用于截图 -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    // 从浏览器存储里读取分析结果
-    const text = sessionStorage.getItem("analysisResult");
-    const resultDiv = document.getElementById("result");
+    // 从 sessionStorage 读取 loading.html 存下来的结果
+    const analysis = sessionStorage.getItem('analysisResult');
+    const pre = document.getElementById('analysis');
 
-    if (text) {
-      // 把换行符变成 <br>，好排版
-      resultDiv.innerHTML = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\n/g, '<br>');
+    if (analysis) {
+      // 直接放到 pre 标签里，会自动保留换行
+      pre.textContent = analysis;
     } else {
-      resultDiv.innerHTML = "<span style='color:red;'>未能获取到分析内容，请返回首页重新提交。</span>";
+      pre.textContent = '❗ 未能获取到分析内容，请返回首页重新提交。';
+      pre.style.color = 'red';
     }
 
-    // 截图并下载
+    // 截图并触发下载
     function saveAsImage() {
-      html2canvas(resultDiv).then(canvas => {
-        const link = document.createElement("a");
-        link.download = "分析报告.png";
+      const container = document.getElementById('reportContainer');
+      html2canvas(container).then(canvas => {
+        const link = document.createElement('a');
+        link.download = '分析报告.png';
         link.href = canvas.toDataURL();
         link.click();
       });
