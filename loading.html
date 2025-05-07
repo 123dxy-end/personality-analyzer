@@ -24,7 +24,10 @@
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
     h2, p { margin: 10px 0; }
   </style>
 </head>
@@ -34,33 +37,43 @@
   <p>请耐心等待，稍后自动跳转</p>
 
   <script>
-    // 尝试从首页拿表单数据，拿不到就用测试值
-    let date = sessionStorage.getItem("birth_date") || "1990-01-01";
-    let time = sessionStorage.getItem("birth_time") || "12:00";
-    let city = sessionStorage.getItem("birth_city") || "北京";
-    let mbti = sessionStorage.getItem("mbti") || "INFP";
+    // 1. 从首页存的 sessionStorage 里取值
+    const birth_date  = sessionStorage.getItem('birth_date')  || '';
+    const birth_time  = sessionStorage.getItem('birth_time')  || '';
+    const birth_city  = sessionStorage.getItem('birth_city')  || '';
+    const mbti        = sessionStorage.getItem('mbti')        || '';
 
-    // 你的 Webhook 地址已经替换到这里
-    const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";
+    // 2. Make Webhook 地址
+    const webhookURL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
 
+    // 3. POST 给 Make，拿 JSON
     fetch(webhookURL, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
-        birth_date: date,
-        birth_time: time,
-        birth_city: city,
+        birth_date: birth_date,
+        birth_time: birth_time,
+        birth_city: birth_city,
         mbti: mbti
       })
     })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error('网络错误: ' + res.status);
+      return res.json();
+    })
     .then(data => {
-      if (!data.result) throw new Error("返回数据中没有 result 字段");
-      // 存结果，跳到展示页
-      sessionStorage.setItem("analysisResult", data.result);
-      window.location.href = "result.html";
+      // 4. 确保拿到 result 字段
+      if (!data.result) {
+        throw new Error('返回数据中没有 result 字段');
+      }
+      // 5. 存下分析结果，然后跳转
+      sessionStorage.setItem('analysisResult', data.result);
+      window.location.href = 'result.html';
     })
     .catch(err => {
+      // 6. 出错展示
       document.body.innerHTML = `
         <h2 style="color:red;">出错了：</h2>
         <pre style="color:#fff; background:#330033; padding:10px; border-radius:5px;">
