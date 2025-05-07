@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>个性命盘分析</title>
   <style>
@@ -24,8 +24,7 @@
       box-shadow: 0 0 12px rgba(0,0,0,0.4);
     }
     .form-container h2 {
-      text-align: center;
-      margin-bottom: 10px;
+      text-align: center; margin-bottom: 10px;
     }
     .form-container p {
       text-align: center;
@@ -54,18 +53,18 @@
     <form id="analysis-form">
       <div class="form-group">
         <label for="birth-date">出生日期</label>
-        <input type="date" id="birth-date" name="birth_date" required />
+        <input type="date" id="birth-date" name="birth_date" required/>
       </div>
       <div class="form-group">
         <label for="birth-time">出生时间</label>
-        <input type="time" id="birth-time" name="birth_time" required />
+        <input type="time" id="birth-time" name="birth_time" required/>
       </div>
       <div class="form-group">
         <label for="birth-city">出生城市</label>
-        <input type="text" id="birth-city" name="birth_city" placeholder="如：北京、上海、广州" required />
+        <input type="text" id="birth-city" name="birth_city" placeholder="如：北京、上海、广州" required/>
       </div>
       <div class="form-group">
-        <label for="mbti">MBTI类型</label>
+        <label for="mbti">MBTI 类型</label>
         <select id="mbti" name="mbti" required>
           <option value="">选择您的MBTI类型</option>
           <option>INFP</option><option>INFJ</option>
@@ -83,15 +82,15 @@
   </div>
 
   <script>
-    document.getElementById("analysis-form").addEventListener("submit", function(e) {
+    document.getElementById('analysis-form').addEventListener('submit', function(e) {
       e.preventDefault();
-      // 1. 存储到 sessionStorage
+      // 1. 存表单数据
       sessionStorage.setItem('birth_date',  document.getElementById('birth-date').value);
       sessionStorage.setItem('birth_time',  document.getElementById('birth-time').value);
       sessionStorage.setItem('birth_city',  document.getElementById('birth-city').value);
       sessionStorage.setItem('mbti',        document.getElementById('mbti').value);
       // 2. 跳转到 loading 页面
-      window.location.href = "loading.html";
+      window.location.href = 'loading.html';
     });
   </script>
 </body>
