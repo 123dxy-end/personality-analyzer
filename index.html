@@ -33,34 +33,17 @@
       margin-bottom: 30px;
       color: #b3b3cc;
     }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: 600;
-    }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; }
     input, select, button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      width: 100%; padding: 10px; border: none; border-radius: 8px; font-size: 16px;
     }
-    input, select {
-      background-color: #423c6d;
-      color: white;
-    }
+    input, select { background-color: #423c6d; color: white; }
     button {
       background: linear-gradient(to right, #a16eff, #7657ff);
-      color: white;
-      cursor: pointer;
-      transition: opacity 0.2s ease;
+      color: white; cursor: pointer; transition: opacity 0.2s ease;
     }
-    button:hover {
-      opacity: 0.85;
-    }
+    button:hover { opacity: 0.85; }
   </style>
 </head>
 <body>
@@ -100,31 +83,14 @@
   </div>
 
   <script>
-    document.getElementById("analysis-form").addEventListener("submit", async function(e) {
+    document.getElementById("analysis-form").addEventListener("submit", function(e) {
       e.preventDefault();
-
-      const birth_date = document.getElementById("birth-date").value;
-      const birth_time = document.getElementById("birth-time").value;
-      const birth_city = document.getElementById("birth-city").value;
-      const mbti = document.getElementById("mbti").value;
-
-      const data = {
-        birth_date,
-        birth_time,
-        birth_city,
-        mbti
-      };
-
-      // 先提交给 Webhook
-      await fetch("https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-      });
-
-      // 然后跳转到 loading 页面
+      // 1. 存储到 sessionStorage
+      sessionStorage.setItem('birth_date',  document.getElementById('birth-date').value);
+      sessionStorage.setItem('birth_time',  document.getElementById('birth-time').value);
+      sessionStorage.setItem('birth_city',  document.getElementById('birth-city').value);
+      sessionStorage.setItem('mbti',        document.getElementById('mbti').value);
+      // 2. 跳转到 loading 页面
       window.location.href = "loading.html";
     });
   </script>
