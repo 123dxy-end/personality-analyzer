@@ -12,6 +12,7 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
+      margin: 0;
       font-family: Arial, sans-serif;
     }
     .spinner {
@@ -27,9 +28,7 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    p {
-      margin-top: 20px;
-    }
+    h2, p { margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -38,29 +37,31 @@
   <p>请耐心等待，稍后自动跳转</p>
 
   <script>
+    // —— 读取首页存的用户输入（四项） ——
     const inputData = {
-      birth_date: "1990-01-01",  // 示例数据（测试时可用）
-      birth_time: "12:00",
-      birth_city: "北京",
-      mbti: "INFP"
+      birth_date: sessionStorage.getItem("birth_date"),
+      birth_time: sessionStorage.getItem("birth_time"),
+      birth_city: sessionStorage.getItem("birth_city"),
+      mbti:       sessionStorage.getItem("mbti")
     };
 
-    const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8"; // ← 替换成你的实际 webhook 地址
+    // 你的 Make Webhook 地址
+    const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";
 
     fetch(webhookURL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(inputData)
     })
-    .then(response => response.json())
+    .then(response => response.json())            // 拿到 JSON
     .then(data => {
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error("未返回跳转链接");
+      if (!data.result) {
+        throw new Error("没有拿到分析结果");
       }
+      // 存到浏览器里，下一页拿来显示
+      sessionStorage.setItem("analysisResult", data.result);
+      // 跳到结果页
+      window.location.href = "result.html";
     })
     .catch(error => {
       console.error("出错了:", error);
