@@ -17,13 +17,14 @@
     }
     .spinner {
       margin-top: 20px;
-      width: 60px; height: 60px;
+      width: 60px;
+      height: 60px;
       border: 8px solid #b095ff;
       border-top: 8px solid transparent;
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }
     h2, p { margin: 10px 0; }
   </style>
 </head>
@@ -33,42 +34,38 @@
   <p>请耐心等待，稍后自动跳转</p>
 
   <script>
-    // 先试着从首页拿四项数据
-    let date = sessionStorage.getItem("birth_date");
-    let time = sessionStorage.getItem("birth_time");
-    let city = sessionStorage.getItem("birth_city");
-    let mbti = sessionStorage.getItem("mbti");
+    // 尝试从首页拿表单数据，拿不到就用测试值
+    let date = sessionStorage.getItem("birth_date") || "1990-01-01";
+    let time = sessionStorage.getItem("birth_time") || "12:00";
+    let city = sessionStorage.getItem("birth_city") || "北京";
+    let mbti = sessionStorage.getItem("mbti") || "INFP";
 
-    // 如果没拿到，就用测试默认值，保证能跑通
-    if (!date || !time || !city || !mbti) {
-      date = "1990-01-01";
-      time = "12:00";
-      city = "北京";
-      mbti = "INFP";
-    }
-
-    const inputData = { birth_date: date, birth_time: time, birth_city: city, mbti: mbti };
+    // 你的 Webhook 地址已经替换到这里
     const webhookURL = "https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8";
 
     fetch(webhookURL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(inputData)
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        birth_date: date,
+        birth_time: time,
+        birth_city: city,
+        mbti: mbti
+      })
     })
     .then(res => res.json())
     .then(data => {
-      if (!data.result) throw new Error("返回结果中没有 result 字段");
-      // 存下结果，跳到展示页
+      if (!data.result) throw new Error("返回数据中没有 result 字段");
+      // 存结果，跳到展示页
       sessionStorage.setItem("analysisResult", data.result);
       window.location.href = "result.html";
     })
     .catch(err => {
-      // 直接把 err.message 显示到页面上
       document.body.innerHTML = `
         <h2 style="color:red;">出错了：</h2>
-        <p style="color:white; background:#330033; padding:10px; border-radius:5px;">
-          ${err.message}
-        </p>
+        <pre style="color:#fff; background:#330033; padding:10px; border-radius:5px;">
+${err.message}
+        </pre>
       `;
       console.error(err);
     });
