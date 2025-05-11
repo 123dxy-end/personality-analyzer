@@ -32,6 +32,7 @@
       justify-content: center;
       align-items: flex-start;
       padding: 20px;
+      overflow-y: auto;
     }
     .report {
       background: #2a1b4d;
@@ -42,13 +43,16 @@
       box-shadow: 0 0 15px rgba(122, 93, 240, 0.4);
       overflow-y: auto;
       white-space: pre-wrap;
-      line-height: 1.6;
+      line-height: 1.8;
       font-size: 1rem;
     }
     .report h2 {
       margin-top: 1.5em;
       color: #b095ff;
-      font-size: 1.2rem;
+      font-size: 1.4rem;
+    }
+    .report p {
+      margin: 1em 0;
     }
     .button-group {
       text-align: center;
@@ -87,7 +91,6 @@
   <!-- 截图依赖 -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    // 取出 raw 返回值
     const raw = sessionStorage.getItem('analysisResult') || '';
     let content;
     try {
@@ -96,10 +99,18 @@
     } catch (e) {
       content = raw;
     }
-    // 渲染纯文本，保留换行
-    document.getElementById('analysis').textContent = content;
 
-    // 保存截图
+    // 简单格式增强：识别大标题和小标题
+    function formatContent(text) {
+      // 识别 Emoji + **标题** 形式的标题，加大字体并加颜色
+      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)\s\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
+      // 保留换行格式，自动分段
+      text = text.replace(/\n/g, '<p></p>');
+      return text;
+    }
+
+    document.getElementById('analysis').innerHTML = formatContent(content);
+
     function saveAsImage() {
       const container = document.getElementById('analysis');
       html2canvas(container, { backgroundColor: null }).then(canvas => {
