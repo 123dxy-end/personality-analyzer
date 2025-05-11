@@ -42,7 +42,7 @@
       width: 100%;
       box-shadow: 0 0 15px rgba(122, 93, 240, 0.4);
       overflow-y: auto;
-      white-space: pre-wrap;
+      white-space: normal;
       line-height: 1.8;
       font-size: 1rem;
     }
@@ -53,6 +53,26 @@
     }
     .report p {
       margin: 1em 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5em 0;
+    }
+    table, th, td {
+      border: 1px solid #7151cc;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #3a236f;
+      color: #d1b2ff;
+    }
+    td {
+      background-color: #4a2a8a;
+      color: #ececff;
     }
     .button-group {
       text-align: center;
@@ -88,7 +108,6 @@
     <button class="btn" onclick="saveAsImage()">📷 保存为图片</button>
   </div>
 
-  <!-- 截图依赖 -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
     const raw = sessionStorage.getItem('analysisResult') || '';
@@ -100,13 +119,41 @@
       content = raw;
     }
 
-    // 简单格式增强：识别大标题和小标题
     function formatContent(text) {
-      // 识别 Emoji + **标题** 形式的标题，加大字体并加颜色
+      // 章节大标题格式，例如：🧭 一、核心人格主轴
       text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)\s\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
-      // 保留换行格式，自动分段
-      text = text.replace(/\n/g, '<p></p>');
-      return text;
+
+      // 表格处理：识别包含“|”的段落渲染为表格
+      const lines = text.split('\n');
+      let formatted = '';
+      let inTable = false;
+
+      lines.forEach(line => {
+        if (line.includes('|')) {
+          const cells = line.split('|').map(cell => cell.trim());
+          if (!inTable) {
+            inTable = true;
+            formatted += '<table><tr>';
+            cells.forEach(cell => formatted += `<th>${cell}</th>`);
+            formatted += '</tr>';
+          } else {
+            formatted += '<tr>';
+            cells.forEach(cell => formatted += `<td>${cell}</td>`);
+            formatted += '</tr>';
+          }
+        } else {
+          if (inTable) {
+            formatted += '</table>';
+            inTable = false;
+          }
+          if (line.trim()) {
+            formatted += `<p>${line}</p>`;
+          }
+        }
+      });
+      if (inTable) formatted += '</table>';
+
+      return formatted;
     }
 
     document.getElementById('analysis').innerHTML = formatContent(content);
