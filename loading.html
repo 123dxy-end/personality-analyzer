@@ -66,7 +66,7 @@
     const birth_city = sessionStorage.getItem('birth_city') || '';
     const mbti = sessionStorage.getItem('mbti') || '';
     const tipEl = document.getElementById('loadingTip');
-    const API_BASE = 'https://personality-analyzer-theta.vercel.app';
+    const API_BASE = ''; // 已部署在 Vercel 上，直接用相对路径
 
     let seconds = 0;
 
@@ -82,12 +82,12 @@
             } else if (data.status === 'pending') {
               setTimeout(checkStatus, 5000);
             } else {
-              tipEl.textContent = "任务未找到或已失败，请返回重新提交。";
+              showError("任务未找到或已失败，请返回重新提交。");
             }
           })
           .catch(err => {
             console.error('状态查询失败:', err);
-            tipEl.textContent = "查询出错，请稍后重试...";
+            showError("查询出错，请稍后重试...");
           });
       }
       checkStatus();
@@ -95,7 +95,23 @@
       setInterval(() => {
         seconds++;
         tipEl.textContent = `已等待 ${seconds} 秒，预计需要 60-120 秒，请耐心等待…`;
+        if (seconds > 180) { 
+          showError("已等待超过 3 分钟，请返回首页重试。");
+        }
       }, 1000);
+    }
+
+    function showError(msg) {
+      document.getElementById('title').textContent = '出错了：';
+      document.querySelector('.spinner').style.display = 'none';
+      tipEl.style.display = 'none';
+      const ec = document.getElementById('errorContainer');
+      ec.innerHTML = `
+        <pre>${msg}</pre>
+        <button onclick="location.href='index.html'">← 返回首页</button>
+        <button onclick="window.location.reload()">重试</button>
+      `;
+      ec.style.display = 'block';
     }
 
     // 发起任务提交
@@ -104,26 +120,19 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
     })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then(data => {
       const { taskId } = data;
-      if (!taskId) throw new Error('未收到 taskId');
+      if (!taskId) throw new Error('未收到有效的 taskId');
       sessionStorage.setItem('taskId', taskId);
       startPolling(taskId);
     })
     .catch(err => {
       console.error('提交任务失败:', err);
-      document.getElementById('title').textContent = '出错了：';
-      document.querySelector('.spinner').style.display = 'none';
-      tipEl.style.display = 'none';
-
-      const ec = document.getElementById('errorContainer');
-      ec.innerHTML = `
-        <pre>${err.name}: ${err.message}</pre>
-        <button onclick="location.href='index.html'">← 返回首页</button>
-        <button onclick="window.location.reload()">重试</button>
-      `;
-      ec.style.display = 'block';
+      showError(`${err.name}: ${err.message}`);
     });
   </script>
 </body>
