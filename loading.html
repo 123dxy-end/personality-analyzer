@@ -66,7 +66,7 @@
     const birth_city = sessionStorage.getItem('birth_city') || '';
     const mbti = sessionStorage.getItem('mbti') || '';
     const tipEl = document.getElementById('loadingTip');
-    const API_BASE = ''; // 已部署在 Vercel 上，直接用相对路径
+    const API_BASE = 'https://personality-analyzer-theta.vercel.app'; // 明确写死你的域名
 
     let seconds = 0;
 
@@ -81,6 +81,8 @@
               window.location.href = 'result.html';
             } else if (data.status === 'pending') {
               setTimeout(checkStatus, 5000);
+            } else if (data.status === 'failed') {
+              showError("分析失败，请稍后重试。");
             } else {
               showError("任务未找到或已失败，请返回重新提交。");
             }
@@ -90,6 +92,7 @@
             showError("查询出错，请稍后重试...");
           });
       }
+
       checkStatus();
 
       setInterval(() => {
