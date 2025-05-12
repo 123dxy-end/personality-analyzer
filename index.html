@@ -131,16 +131,29 @@
       minuteSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}分</option>`;
     }
 
-    // 提交逻辑
+    // 提交逻辑（异步轮询模式）
     document.getElementById('analysis-form').addEventListener('submit', function(e) {
       e.preventDefault();
+
       const birth_date = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
       const birth_time = `${hourSelect.value}:${minuteSelect.value}`;
-      sessionStorage.setItem('birth_date', birth_date);
-      sessionStorage.setItem('birth_time', birth_time);
-      sessionStorage.setItem('birth_city', document.getElementById('birth-city').value);
-      sessionStorage.setItem('mbti', document.getElementById('mbti').value);
-      window.location.href = 'loading.html';
+      const birth_city = document.getElementById('birth-city').value;
+      const mbti = document.getElementById('mbti').value;
+
+      fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
+      })
+      .then(res => res.json())
+      .then(data => {
+        sessionStorage.setItem('taskId', data.taskId);
+        window.location.href = 'loading.html';
+      })
+      .catch(err => {
+        alert('提交失败，请稍后重试。');
+        console.error('提交错误：', err);
+      });
     });
   </script>
 </body>
