@@ -58,19 +58,21 @@
   <h2 id="title">正在生成你的专属人格分析报告…</h2>
   <div class="spinner"></div>
   <p id="loadingTip">预计需要 60-120 秒，请耐心等待…</p>
-
   <div id="errorContainer"></div>
 
   <script>
-    const taskId = sessionStorage.getItem('taskId'); // 从提交表单后存储的 taskId 获取
+    const birth_date = sessionStorage.getItem('birth_date') || '';
+    const birth_time = sessionStorage.getItem('birth_time') || '';
+    const birth_city = sessionStorage.getItem('birth_city') || '';
+    const mbti = sessionStorage.getItem('mbti') || '';
     const tipEl = document.getElementById('loadingTip');
+    const API_BASE = 'https://personality-analyzer-theta.vercel.app';
+
     let seconds = 0;
 
-    if (!taskId) {
-      tipEl.textContent = "未找到任务 ID，请重新提交信息。";
-    } else {
+    function startPolling(taskId) {
       function checkStatus() {
-        fetch(`/api/status?taskId=${taskId}`)
+        fetch(`${API_BASE}/api/status?taskId=${taskId}`)
           .then(res => res.json())
           .then(data => {
             console.log('[轮询] 当前状态：', data.status);
@@ -78,7 +80,7 @@
               sessionStorage.setItem('analysisResult', data.result);
               window.location.href = 'result.html';
             } else if (data.status === 'pending') {
-              setTimeout(checkStatus, 5000); // 每5秒轮询一次
+              setTimeout(checkStatus, 5000);
             } else {
               tipEl.textContent = "任务未找到或已失败，请返回重新提交。";
             }
@@ -88,16 +90,41 @@
             tipEl.textContent = "查询出错，请稍后重试...";
           });
       }
-
-      // 开始轮询
       checkStatus();
 
-      // 每秒更新等待提示
       setInterval(() => {
         seconds++;
         tipEl.textContent = `已等待 ${seconds} 秒，预计需要 60-120 秒，请耐心等待…`;
       }, 1000);
     }
+
+    // 发起任务提交
+    fetch(`${API_BASE}/api/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const { taskId } = data;
+      if (!taskId) throw new Error('未收到 taskId');
+      sessionStorage.setItem('taskId', taskId);
+      startPolling(taskId);
+    })
+    .catch(err => {
+      console.error('提交任务失败:', err);
+      document.getElementById('title').textContent = '出错了：';
+      document.querySelector('.spinner').style.display = 'none';
+      tipEl.style.display = 'none';
+
+      const ec = document.getElementById('errorContainer');
+      ec.innerHTML = `
+        <pre>${err.name}: ${err.message}</pre>
+        <button onclick="location.href='index.html'">← 返回首页</button>
+        <button onclick="window.location.reload()">重试</button>
+      `;
+      ec.style.display = 'block';
+    });
   </script>
 </body>
 </html>
