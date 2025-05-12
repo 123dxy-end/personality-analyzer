@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <title>正在生成你的专属人格分析报告…</title>
   <style>
     body {
@@ -26,12 +26,10 @@
       animation: spin 1s linear infinite;
     }
     @keyframes spin {
-      0%   { transform: rotate(0deg); }
+      0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    #loadingTip {
-      margin-top: 10px;
-    }
+    #loadingTip { margin-top: 10px; }
     #errorContainer {
       display: none;
       margin-top: 20px;
@@ -59,65 +57,47 @@
 <body>
   <h2 id="title">正在生成你的专属人格分析报告…</h2>
   <div class="spinner"></div>
-  <p id="loadingTip">预计需要 60 秒，请耐心等待…</p>
+  <p id="loadingTip">预计需要 60-120 秒，请耐心等待…</p>
 
   <div id="errorContainer"></div>
 
   <script>
-    // 从 sessionStorage 取用户输入
-    const birth_date = sessionStorage.getItem('birth_date') || '';
-    const birth_time = sessionStorage.getItem('birth_time') || '';
-    const birth_city = sessionStorage.getItem('birth_city') || '';
-    const mbti       = sessionStorage.getItem('mbti')       || '';
-    // 注意：如果后续你搭了 /api/proxy，请把下面这一行改成 '/api/proxy'
-    const webhookURL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
-
-    console.log('输入数据 →', { birth_date, birth_time, birth_city, mbti });
-    console.log('→ 发起 Webhook 请求：', webhookURL, new Date().toISOString());
-
-    // 更新等待提示
+    const taskId = sessionStorage.getItem('taskId'); // 从提交表单后存储的 taskId 获取
     const tipEl = document.getElementById('loadingTip');
     let seconds = 0;
-    const intervalId = setInterval(() => {
-      seconds++;
-      if (seconds <= 180) {
-        tipEl.textContent = `已等待 ${seconds} 秒，预计需要 60-120 秒，请耐心等待…`;
+
+    if (!taskId) {
+      tipEl.textContent = "未找到任务 ID，请重新提交信息。";
+    } else {
+      function checkStatus() {
+        fetch(`/api/status?taskId=${taskId}`)
+          .then(res => res.json())
+          .then(data => {
+            console.log('[轮询] 当前状态：', data.status);
+            if (data.status === 'done') {
+              sessionStorage.setItem('analysisResult', data.result);
+              window.location.href = 'result.html';
+            } else if (data.status === 'pending') {
+              setTimeout(checkStatus, 5000); // 每5秒轮询一次
+            } else {
+              tipEl.textContent = "任务未找到或已失败，请返回重新提交。";
+            }
+          })
+          .catch(err => {
+            console.error('状态查询失败:', err);
+            tipEl.textContent = "查询出错，请稍后重试...";
+          });
       }
-    }, 1000);
 
-    fetch(webhookURL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
-    })
-    .then(res => {
-      console.log('← 收到响应：', new Date().toISOString(), 'status=', res.status, 'ok=', res.ok);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return res.text();
-    })
-    .then(text => {
-      clearInterval(intervalId);
-      console.log('← 响应文本长度：', text.length);
-      sessionStorage.setItem('analysisResult', text);
-      window.location.href = 'result.html';
-    })
-    .catch(err => {
-      clearInterval(intervalId);
-      console.error('!! fetch 出错：', err);
-      document.getElementById('title').textContent = '出错了：';
-      // 隐藏 loading 动画和提示
-      document.querySelector('.spinner').style.display = 'none';
-      tipEl.style.display = 'none';
+      // 开始轮询
+      checkStatus();
 
-      // 展示错误详情和操作按钮
-      const ec = document.getElementById('errorContainer');
-      ec.innerHTML = `
-        <pre>${err.name}: ${err.message}</pre>
-        <button onclick="location.href='index.html'">← 返回首页</button>
-        <button onclick="window.location.reload()">重试</button>
-      `;
-      ec.style.display = 'block';
-    });
+      // 每秒更新等待提示
+      setInterval(() => {
+        seconds++;
+        tipEl.textContent = `已等待 ${seconds} 秒，预计需要 60-120 秒，请耐心等待…`;
+      }, 1000);
+    }
   </script>
 </body>
 </html>
