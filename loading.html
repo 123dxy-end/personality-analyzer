@@ -14,9 +14,10 @@
       height: 100vh;
       margin: 0;
       font-family: Arial, sans-serif;
+      text-align: center;
     }
     .spinner {
-      margin-top: 20px;
+      margin: 20px 0;
       width: 60px;
       height: 60px;
       border: 8px solid #b095ff;
@@ -28,29 +29,58 @@
       0%   { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-    h2, p { margin: 10px 0; }
+    #loadingTip {
+      margin-top: 10px;
+    }
+    #errorContainer {
+      display: none;
+      margin-top: 20px;
+      color: #fff;
+    }
+    #errorContainer pre {
+      background: #330033;
+      padding: 12px;
+      border-radius: 6px;
+      max-width: 80vw;
+      overflow-x: auto;
+      text-align: left;
+    }
+    #errorContainer button {
+      margin: 10px 5px;
+      padding: 8px 16px;
+      background: #7a5df0;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <h2>正在生成你的专属人格分析报告…</h2>
+  <h2 id="title">正在生成你的专属人格分析报告…</h2>
   <div class="spinner"></div>
   <p id="loadingTip">预计需要 60 秒，请耐心等待…</p>
 
+  <div id="errorContainer"></div>
+
   <script>
+    // 从 sessionStorage 取用户输入
     const birth_date = sessionStorage.getItem('birth_date') || '';
     const birth_time = sessionStorage.getItem('birth_time') || '';
     const birth_city = sessionStorage.getItem('birth_city') || '';
     const mbti       = sessionStorage.getItem('mbti')       || '';
-
+    // 注意：如果后续你搭了 /api/proxy，请把下面这一行改成 '/api/proxy'
     const webhookURL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
 
+    console.log('输入数据 →', { birth_date, birth_time, birth_city, mbti });
+    console.log('→ 发起 Webhook 请求：', webhookURL, new Date().toISOString());
+
+    // 更新等待提示
     const tipEl = document.getElementById('loadingTip');
     let seconds = 0;
-
-    // 每秒更新提示
-    const interval = setInterval(() => {
+    const intervalId = setInterval(() => {
       seconds++;
-      if (seconds <= 180) {  // 最长显示 3 分钟
+      if (seconds <= 180) {
         tipEl.textContent = `已等待 ${seconds} 秒，预计需要 60-120 秒，请耐心等待…`;
       }
     }, 1000);
@@ -61,24 +91,32 @@
       body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
     })
     .then(res => {
-      if (!res.ok) throw new Error('网络错误：' + res.status);
+      console.log('← 收到响应：', new Date().toISOString(), 'status=', res.status, 'ok=', res.ok);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.text();
     })
     .then(text => {
-      clearInterval(interval);
+      clearInterval(intervalId);
+      console.log('← 响应文本长度：', text.length);
       sessionStorage.setItem('analysisResult', text);
-      // 请求成功后直接跳转，无需再等待
       window.location.href = 'result.html';
     })
     .catch(err => {
-      clearInterval(interval);
-      document.body.innerHTML = `
-        <h2 style="color:red;">出错了：</h2>
-        <pre style="color:#fff; background:#330033; padding:10px; border-radius:5px;">
-${err.message}
-        </pre>
+      clearInterval(intervalId);
+      console.error('!! fetch 出错：', err);
+      document.getElementById('title').textContent = '出错了：';
+      // 隐藏 loading 动画和提示
+      document.querySelector('.spinner').style.display = 'none';
+      tipEl.style.display = 'none';
+
+      // 展示错误详情和操作按钮
+      const ec = document.getElementById('errorContainer');
+      ec.innerHTML = `
+        <pre>${err.name}: ${err.message}</pre>
+        <button onclick="location.href='index.html'">← 返回首页</button>
+        <button onclick="window.location.reload()">重试</button>
       `;
-      console.error(err);
+      ec.style.display = 'block';
     });
   </script>
 </body>
