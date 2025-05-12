@@ -57,7 +57,7 @@
 <body>
   <h2 id="title">正在生成你的专属人格分析报告…</h2>
   <div class="spinner"></div>
-  <p id="loadingTip">预计需要 60-120 秒，请耐心等待…</p>
+  <p id="loadingTip">预计需要 60 秒，请耐心等待…</p>
   <div id="errorContainer"></div>
 
   <script>
@@ -65,49 +65,49 @@
     const birth_time = sessionStorage.getItem('birth_time') || '';
     const birth_city = sessionStorage.getItem('birth_city') || '';
     const mbti = sessionStorage.getItem('mbti') || '';
+
+    const webhookURL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
     const tipEl = document.getElementById('loadingTip');
-    const API_BASE = 'https://personality-analyzer-theta.vercel.app'; // 明确写死你的域名
+
+    console.log('【开始分析】', { birth_date, birth_time, birth_city, mbti });
 
     let seconds = 0;
-
-    function startPolling(taskId) {
-      function checkStatus() {
-        fetch(`${API_BASE}/api/status?taskId=${taskId}`)
-          .then(res => res.json())
-          .then(data => {
-            console.log('[轮询] 当前状态：', data.status);
-            if (data.status === 'done') {
-              sessionStorage.setItem('analysisResult', data.result);
-              window.location.href = 'result.html';
-            } else if (data.status === 'pending') {
-              setTimeout(checkStatus, 5000);
-            } else if (data.status === 'failed') {
-              showError("分析失败，请稍后重试。");
-            } else {
-              showError("任务未找到或已失败，请返回重新提交。");
-            }
-          })
-          .catch(err => {
-            console.error('状态查询失败:', err);
-            showError("查询出错，请稍后重试...");
-          });
+    const intervalId = setInterval(() => {
+      seconds++;
+      tipEl.textContent = `已等待 ${seconds} 秒，预计需要 60-120 秒，请耐心等待…`;
+      if (seconds >= 180) {
+        clearInterval(intervalId);
+        showError('已等待超过 3 分钟，可能处理超时，请返回重试。');
       }
+    }, 1000);
 
-      checkStatus();
-
-      setInterval(() => {
-        seconds++;
-        tipEl.textContent = `已等待 ${seconds} 秒，预计需要 60-120 秒，请耐心等待…`;
-        if (seconds > 180) { 
-          showError("已等待超过 3 分钟，请返回首页重试。");
-        }
-      }, 1000);
-    }
+    fetch(webhookURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
+    })
+    .then(res => {
+      console.log('【收到响应】', res.status);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.text();
+    })
+    .then(text => {
+      clearInterval(intervalId);
+      console.log('【分析完成】响应内容长度：', text.length);
+      sessionStorage.setItem('analysisResult', text);
+      window.location.href = 'result.html';
+    })
+    .catch(err => {
+      clearInterval(intervalId);
+      console.error('【请求失败】', err);
+      showError(`${err.name}: ${err.message}`);
+    });
 
     function showError(msg) {
       document.getElementById('title').textContent = '出错了：';
       document.querySelector('.spinner').style.display = 'none';
       tipEl.style.display = 'none';
+
       const ec = document.getElementById('errorContainer');
       ec.innerHTML = `
         <pre>${msg}</pre>
@@ -116,27 +116,6 @@
       `;
       ec.style.display = 'block';
     }
-
-    // 发起任务提交
-    fetch(`${API_BASE}/api/submit`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    })
-    .then(data => {
-      const { taskId } = data;
-      if (!taskId) throw new Error('未收到有效的 taskId');
-      sessionStorage.setItem('taskId', taskId);
-      startPolling(taskId);
-    })
-    .catch(err => {
-      console.error('提交任务失败:', err);
-      showError(`${err.name}: ${err.message}`);
-    });
   </script>
 </body>
 </html>
