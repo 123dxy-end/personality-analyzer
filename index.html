@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>个性命盘分析</title>
   <style>
     body {
@@ -24,7 +24,8 @@
       box-shadow: 0 0 12px rgba(0,0,0,0.4);
     }
     .form-container h2 {
-      text-align: center; margin-bottom: 10px;
+      text-align: center;
+      margin-bottom: 10px;
     }
     .form-container p {
       text-align: center;
@@ -35,12 +36,18 @@
     .form-group { margin-bottom: 20px; }
     label { display: block; margin-bottom: 5px; font-weight: 600; }
     select, input, button {
-      width: 100%; padding: 10px; border: none; border-radius: 8px; font-size: 16px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
     }
     select, input { background-color: #423c6d; color: white; }
     button {
       background: linear-gradient(to right, #a16eff, #7657ff);
-      color: white; cursor: pointer; transition: opacity 0.2s ease;
+      color: white;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
     }
     button:hover { opacity: 0.85; }
     .inline-selects {
@@ -48,9 +55,7 @@
       justify-content: space-between;
       gap: 5px;
     }
-    .inline-selects select {
-      flex: 1;
-    }
+    .inline-selects select { flex: 1; }
   </style>
 </head>
 <body>
@@ -76,12 +81,12 @@
       </div>
       <div class="form-group">
         <label for="birth-city">出生城市</label>
-        <input type="text" id="birth-city" placeholder="如：北京、上海、广州" required/>
+        <input type="text" id="birth-city" placeholder="如：北京、上海、广州" required />
       </div>
       <div class="form-group">
         <label for="mbti">MBTI 类型</label>
         <select id="mbti" required>
-          <option value="">选择您的MBTI类型</option>
+          <option value="">选择您的 MBTI 类型</option>
           <option>INFP</option><option>INFJ</option><option>ENFP</option><option>ENFJ</option>
           <option>INTP</option><option>INTJ</option><option>ENTP</option><option>ENTJ</option>
           <option>ISFP</option><option>ISFJ</option><option>ESFP</option><option>ESFJ</option>
@@ -127,33 +132,34 @@
     for (let h = 0; h < 24; h++) {
       hourSelect.innerHTML += `<option value="${h.toString().padStart(2, '0')}">${h}时</option>`;
     }
-    for (let m = 0; m < 60; m += 5) {
+    for (let m = 0; m < 60; m++) {  // 改为 1 分钟递增
       minuteSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}分</option>`;
     }
 
-    // 提交逻辑（异步轮询模式）
+    // 提交逻辑（直接跳转到 loading.html 进行分析）
     document.getElementById('analysis-form').addEventListener('submit', function(e) {
       e.preventDefault();
 
       const birth_date = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
       const birth_time = `${hourSelect.value}:${minuteSelect.value}`;
-      const birth_city = document.getElementById('birth-city').value;
+      const birth_city = document.getElementById('birth-city').value.trim();
       const mbti = document.getElementById('mbti').value;
 
-      fetch('/api/submit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
-      })
-      .then(res => res.json())
-      .then(data => {
-        sessionStorage.setItem('taskId', data.taskId);
-        window.location.href = 'loading.html';
-      })
-      .catch(err => {
-        alert('提交失败，请稍后重试。');
-        console.error('提交错误：', err);
-      });
+      if (!birth_city || !mbti) {
+        alert('请填写完整信息后再提交。');
+        return;
+      }
+
+      // 保存数据到 sessionStorage
+      sessionStorage.setItem('birth_date', birth_date);
+      sessionStorage.setItem('birth_time', birth_time);
+      sessionStorage.setItem('birth_city', birth_city);
+      sessionStorage.setItem('mbti', mbti);
+
+      console.log('【提交信息】', { birth_date, birth_time, birth_city, mbti });
+
+      // 跳转到 loading.html 执行分析
+      window.location.href = 'loading.html';
     });
   </script>
 </body>
