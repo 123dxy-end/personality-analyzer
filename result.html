@@ -112,18 +112,18 @@
   <script>
     const raw = sessionStorage.getItem('analysisResult') || '';
     let content;
+
     try {
       const obj = JSON.parse(raw);
-      content = obj.result;
+      content = obj.result || raw;
     } catch (e) {
       content = raw;
     }
 
     function formatContent(text) {
-      // 章节大标题格式，例如：🧭 一、核心人格主轴
-      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)\s\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
+      // 章节大标题格式：🧭 一、核心人格主轴
+      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)\s*\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
 
-      // 表格处理：识别包含“|”的段落渲染为表格
       const lines = text.split('\n');
       let formatted = '';
       let inTable = false;
@@ -151,12 +151,17 @@
           }
         }
       });
-      if (inTable) formatted += '</table>';
 
+      if (inTable) formatted += '</table>';
       return formatted;
     }
 
-    document.getElementById('analysis').innerHTML = formatContent(content);
+    const analysisElement = document.getElementById('analysis');
+    if (content) {
+      analysisElement.innerHTML = formatContent(content);
+    } else {
+      analysisElement.innerHTML = '<p>暂无结果，请返回首页重试。</p>';
+    }
 
     function saveAsImage() {
       const container = document.getElementById('analysis');
