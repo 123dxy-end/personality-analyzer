@@ -5,28 +5,34 @@ export default async function handler(req, res) {
 
   const taskId = uuidv4();
 
-  // 临时存储任务信息（仅用于演示）
+  // 临时存储任务信息
   global.tasks = global.tasks || {};
   global.tasks[taskId] = { status: 'pending', result: '', data: req.body };
 
-  try {
-    // 等待 Make 完成任务提交，否则直接失败
-    const response = await fetch('https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...req.body, taskId })
-    });
+  // ✅ 直接响应前端，不等待 Webhook 返回
+  res.status(200).json({ taskId });
 
-    if (!response.ok) {
-      throw new Error(`Webhook 调用失败，状态码：${response.status}`);
+  // 异步调用 Webhook，不影响用户体验
+  fetch('https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...req.body, taskId })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error(`Webhook 调用失败，状态码：${response.status}`);
+    return response.json();
+  })
+  .then(result => {
+    // 👇 这里可以更新任务状态为 "done"，并保存结果（如果有的话）
+    if (global.tasks[taskId]) {
+      global.tasks[taskId].status = 'done';
+      global.tasks[taskId].result = result; // 假设 webhook 会返回分析结果
     }
-
-    // 正确提交后，返回 taskId 给前端
-    res.status(200).json({ taskId });
-
-  } catch (e) {
+  })
+  .catch(e => {
     console.error('Webhook 调用失败:', e);
-    // 明确告诉前端失败了
-    res.status(500).json({ error: 'Webhook 调用失败', details: e.message });
-  }
+    if (global.tasks[taskId]) {
+      global.tasks[taskId].status = 'failed';
+    }
+  });
 }
