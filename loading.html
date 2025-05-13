@@ -66,13 +66,13 @@
     const birth_city = sessionStorage.getItem('birth_city') || '';
     const mbti = sessionStorage.getItem('mbti') || '';
     const tipEl = document.getElementById('loadingTip');
-    const API_BASE = 'https://personality-analyzer-theta.vercel.app'; // 明确指定域名
+    const WEBHOOK_URL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
 
     let seconds = 0;
 
     function startPolling(taskId) {
       function checkStatus() {
-        fetch(`${API_BASE}/api/status?taskId=${taskId}`)
+        fetch(`https://personality-analyzer-theta.vercel.app/api/status?taskId=${taskId}`)
           .then(res => res.json())
           .then(data => {
             console.log('[轮询] 当前状态：', data.status);
@@ -80,7 +80,7 @@
               sessionStorage.setItem('analysisResult', data.result);
               window.location.href = 'result.html';
             } else if (data.status === 'pending') {
-              setTimeout(checkStatus, 1000);  // 轮询间隔改为 1 秒
+              setTimeout(checkStatus, 1000);
             } else if (data.status === 'failed') {
               showError("分析失败，请稍后重试。");
             } else {
@@ -117,16 +117,13 @@
       ec.style.display = 'block';
     }
 
-    // 发起任务提交
-    fetch(`${API_BASE}/api/submit`, {
+    // 直接调用 Make Webhook 提交数据
+    fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
     })
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    })
+    .then(res => res.json())
     .then(data => {
       const { taskId } = data;
       if (!taskId) throw new Error('未收到有效的 taskId');
