@@ -29,6 +29,10 @@
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+    #loadingTip {
+      margin: 10px 0;
+      font-size: 1rem;
+    }
     #errorContainer {
       display: none;
       margin-top: 20px;
@@ -56,6 +60,7 @@
 <body>
   <h2 id="title">正在生成你的专属人格分析报告…</h2>
   <div class="spinner"></div>
+  <div id="loadingTip">预计等待 60-120 秒，请耐心等待…</div>
   <div id="errorContainer"></div>
 
   <script>
@@ -65,9 +70,30 @@
     const mbti       = sessionStorage.getItem('mbti')       || '';
     const WEBHOOK_URL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
 
+    let seconds = 0;
+    let timerId;
+
+    function startTimer() {
+      const tipEl = document.getElementById('loadingTip');
+      timerId = setInterval(() => {
+        seconds++;
+        tipEl.textContent = `已等待 ${seconds} 秒，预计等待 60-120 秒，请耐心等待…`;
+        if (seconds >= 180) {
+          // 超过 3 分钟仍未返回，报错
+          clearInterval(timerId);
+          showError('已等待超过 3 分钟，请返回首页重试。');
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+    }
+
     function showError(msg) {
       document.getElementById('title').textContent = '出错了：';
       document.querySelector('.spinner').style.display = 'none';
+      document.getElementById('loadingTip').style.display = 'none';
       const ec = document.getElementById('errorContainer');
       ec.innerHTML = `
         <pre>${msg}</pre>
@@ -77,19 +103,27 @@
       ec.style.display = 'block';
     }
 
+    // 开始计时
+    startTimer();
+
     // 同步调用：直接拿到 result 后跳转
     fetch(WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
     })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then(data => {
+      stopTimer();
       if (!data.result) throw new Error('后台未返回 result 字段');
       sessionStorage.setItem('analysisResult', data.result);
       window.location.href = 'result.html';
     })
     .catch(err => {
+      stopTimer();
       console.error('提交任务失败:', err);
       showError(err.message || '未知错误');
     });
