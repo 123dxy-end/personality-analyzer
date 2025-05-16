@@ -1,132 +1,74 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-  <meta charset="UTF-8" />
-  <title>正在生成你的专属人格分析报告…</title>
-  <style>
-    body {
-      background-color: #1a1133;
-      color: #b095ff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
-    .spinner {
-      margin: 20px 0;
-      width: 60px;
-      height: 60px;
-      border: 8px solid #b095ff;
-      border-top: 8px solid transparent;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    #loadingTip {
-      margin: 10px 0;
-      font-size: 1rem;
-    }
-    #errorContainer {
-      display: none;
-      margin-top: 20px;
-      color: #fff;
-    }
-    #errorContainer pre {
-      background: #330033;
-      padding: 12px;
-      border-radius: 6px;
-      max-width: 80vw;
-      overflow-x: auto;
-      text-align: left;
-    }
-    #errorContainer button {
-      margin: 10px 5px;
-      padding: 8px 16px;
-      background: #7a5df0;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <h2 id="title">正在生成你的专属人格分析报告…</h2>
-  <div class="spinner"></div>
-  <div id="loadingTip">预计等待 60-120 秒，请耐心等待…</div>
-  <div id="errorContainer"></div>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const taskId = urlParams.get('taskId');
 
-  <script>
-    const birth_date = sessionStorage.getItem('birth_date') || '';
-    const birth_time = sessionStorage.getItem('birth_time') || '';
-    const birth_city = sessionStorage.getItem('birth_city') || '';
-    const mbti       = sessionStorage.getItem('mbti')       || '';
-    const WEBHOOK_URL = 'https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8';
+  if (!taskId) {
+    showError('未获取到任务 ID，请返回首页重新提交。');
+    throw new Error('Missing taskId');
+  }
 
-    let seconds = 0;
-    let timerId;
+  let seconds = 0;
+  let timerId;
 
-    function startTimer() {
-      const tipEl = document.getElementById('loadingTip');
-      timerId = setInterval(() => {
-        seconds++;
-        tipEl.textContent = `已等待 ${seconds} 秒，预计等待 60-120 秒，请耐心等待…`;
-        if (seconds >= 180) {
-          // 超过 3 分钟仍未返回，报错
-          clearInterval(timerId);
-          showError('已等待超过 3 分钟，请返回首页重试。');
-        }
-      }, 1000);
-    }
+  function startTimer() {
+    const tipEl = document.getElementById('loadingTip');
+    timerId = setInterval(() => {
+      seconds++;
+      tipEl.textContent = `已等待 ${seconds} 秒，预计等待 60-120 秒，请耐心等待…`;
+      if (seconds >= 180) {
+        clearInterval(timerId);
+        showError('已等待超过 3 分钟，请返回首页重试。');
+      }
+    }, 1000);
+  }
 
-    function stopTimer() {
-      clearInterval(timerId);
-    }
+  function stopTimer() {
+    clearInterval(timerId);
+  }
 
-    function showError(msg) {
-      document.getElementById('title').textContent = '出错了：';
-      document.querySelector('.spinner').style.display = 'none';
-      document.getElementById('loadingTip').style.display = 'none';
-      const ec = document.getElementById('errorContainer');
-      ec.innerHTML = `
-        <pre>${msg}</pre>
-        <button onclick="location.href='index.html'">← 返回首页</button>
-        <button onclick="window.location.reload()">重试</button>
-      `;
-      ec.style.display = 'block';
-    }
+  function showError(msg) {
+    document.getElementById('title').textContent = '出错了：';
+    document.querySelector('.spinner').style.display = 'none';
+    document.getElementById('loadingTip').style.display = 'none';
+    const ec = document.getElementById('errorContainer');
+    ec.innerHTML = `
+      <pre>${msg}</pre>
+      <button onclick="location.href='index.html'">← 返回首页</button>
+      <button onclick="window.location.reload()">重试</button>
+    `;
+    ec.style.display = 'block';
+  }
 
-    // 开始计时
-    startTimer();
+  function startPolling() {
+    const statusUrl = `/api/status?taskId=${taskId}`;
+    const intervalId = setInterval(() => {
+      fetch(statusUrl)
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.json();
+        })
+        .then(data => {
+          if (data.status === 'done') {
+            clearInterval(intervalId);
+            stopTimer();
+            sessionStorage.setItem('analysisResult', data.result);
+            window.location.href = 'result.html';
+          } else if (data.status === 'failed') {
+            clearInterval(intervalId);
+            stopTimer();
+            showError('任务处理失败，请返回首页重试。');
+          }
+          // 如果是 pending，不做任何操作，继续轮询
+        })
+        .catch(err => {
+          clearInterval(intervalId);
+          stopTimer();
+          console.error('轮询失败:', err);
+          showError(err.message || '未知错误');
+        });
+    }, 1000); // 每秒轮询一次
+  }
 
-    // 同步调用：直接拿到 result 后跳转
-    fetch(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
-    })
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return res.json();
-    })
-    .then(data => {
-      stopTimer();
-      if (!data.result) throw new Error('后台未返回 result 字段');
-      sessionStorage.setItem('analysisResult', data.result);
-      window.location.href = 'result.html';
-    })
-    .catch(err => {
-      stopTimer();
-      console.error('提交任务失败:', err);
-      showError(err.message || '未知错误');
-    });
-  </script>
-</body>
-</html>
+  startTimer();
+  startPolling();
+</script>
