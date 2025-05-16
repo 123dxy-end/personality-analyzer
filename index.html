@@ -62,7 +62,6 @@
   <div class="form-container">
     <h2>个性命盘分析</h2>
     <p>结合八字、人类图、星座、MBTI，探索你的真实个性</p>
-
     <form id="analysis-form">
       <div class="form-group">
         <label>出生日期</label>
@@ -98,77 +97,74 @@
   </div>
 
   <script>
-    // 填充年份
-    const yearSelect = document.getElementById('birth-year');
-    const currentYear = new Date().getFullYear();
-    for (let y = currentYear; y >= 1900; y--) {
-      yearSelect.innerHTML += `<option value="${y}">${y}年</option>`;
-    }
+    window.addEventListener('DOMContentLoaded', () => {
+      const yearSelect = document.getElementById('birth-year');
+      const monthSelect = document.getElementById('birth-month');
+      const daySelect = document.getElementById('birth-day');
+      const hourSelect = document.getElementById('birth-hour');
+      const minuteSelect = document.getElementById('birth-minute');
 
-    // 填充月份
-    const monthSelect = document.getElementById('birth-month');
-    for (let m = 1; m <= 12; m++) {
-      monthSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}月</option>`;
-    }
-
-    // 填充日期
-    const daySelect = document.getElementById('birth-day');
-    function updateDays() {
-      const year = parseInt(yearSelect.value);
-      const month = parseInt(monthSelect.value);
-      const days = new Date(year, month, 0).getDate();
-      daySelect.innerHTML = '';
-      for (let d = 1; d <= days; d++) {
-        daySelect.innerHTML += `<option value="${d.toString().padStart(2, '0')}">${d}日</option>`;
+      const currentYear = new Date().getFullYear();
+      for (let y = currentYear; y >= 1900; y--) {
+        yearSelect.innerHTML += `<option value="${y}">${y}年</option>`;
       }
-    }
-    yearSelect.addEventListener('change', updateDays);
-    monthSelect.addEventListener('change', updateDays);
-    updateDays();
-
-    // 填充小时和分钟
-    const hourSelect = document.getElementById('birth-hour');
-    const minuteSelect = document.getElementById('birth-minute');
-    for (let h = 0; h < 24; h++) {
-      hourSelect.innerHTML += `<option value="${h.toString().padStart(2, '0')}">${h}时</option>`;
-    }
-    for (let m = 0; m < 60; m++) {
-      minuteSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}分</option>`;
-    }
-
-    // 提交逻辑：调用 submit.js 并获取 taskId
-    document.getElementById('analysis-form').addEventListener('submit', async function(e) {
-      e.preventDefault();
-
-      const birth_date = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
-      const birth_time = `${hourSelect.value}:${minuteSelect.value}`;
-      const birth_city = document.getElementById('birth-city').value.trim();
-      const mbti = document.getElementById('mbti').value;
-
-      if (!birth_city || !mbti) {
-        alert('请填写完整信息后再提交。');
-        return;
+      for (let m = 1; m <= 12; m++) {
+        monthSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}月</option>`;
       }
 
-      try {
-        const response = await fetch('/api/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
-        });
+      function updateDays() {
+        const year = parseInt(yearSelect.value);
+        const month = parseInt(monthSelect.value);
+        const days = new Date(year, month, 0).getDate();
+        daySelect.innerHTML = '';
+        for (let d = 1; d <= days; d++) {
+          daySelect.innerHTML += `<option value="${d.toString().padStart(2, '0')}">${d}日</option>`;
+        }
+      }
+      yearSelect.addEventListener('change', updateDays);
+      monthSelect.addEventListener('change', updateDays);
+      updateDays();
 
-        const data = await response.json();
+      for (let h = 0; h < 24; h++) {
+        hourSelect.innerHTML += `<option value="${h.toString().padStart(2, '0')}">${h}时</option>`;
+      }
+      for (let m = 0; m < 60; m++) {
+        minuteSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}分</option>`;
+      }
 
-        if (data.taskId) {
-          console.log('【收到 TaskId】', data.taskId);
-          window.location.href = `loading.html?taskId=${data.taskId}`;
-        } else {
+      document.getElementById('analysis-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const birth_date = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
+        const birth_time = `${hourSelect.value}:${minuteSelect.value}`;
+        const birth_city = document.getElementById('birth-city').value.trim();
+        const mbti = document.getElementById('mbti').value;
+
+        if (!birth_city || !mbti) {
+          alert('请填写完整信息后再提交。');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
+          });
+
+          const data = await response.json();
+
+          if (data.taskId) {
+            console.log('【收到 TaskId】', data.taskId);
+            window.location.href = `loading.html?taskId=${data.taskId}`;
+          } else {
+            alert('提交失败，请稍后重试。');
+          }
+        } catch (err) {
+          console.error('提交出错:', err);
           alert('提交失败，请稍后重试。');
         }
-      } catch (err) {
-        console.error('提交出错:', err);
-        alert('提交失败，请稍后重试。');
-      }
+      });
     });
   </script>
 </body>
