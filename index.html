@@ -132,12 +132,12 @@
     for (let h = 0; h < 24; h++) {
       hourSelect.innerHTML += `<option value="${h.toString().padStart(2, '0')}">${h}时</option>`;
     }
-    for (let m = 0; m < 60; m++) {  // 改为 1 分钟递增
+    for (let m = 0; m < 60; m++) {
       minuteSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}分</option>`;
     }
 
-    // 提交逻辑（直接跳转到 loading.html 进行分析）
-    document.getElementById('analysis-form').addEventListener('submit', function(e) {
+    // 提交逻辑：调用 submit.js 并获取 taskId
+    document.getElementById('analysis-form').addEventListener('submit', async function(e) {
       e.preventDefault();
 
       const birth_date = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
@@ -150,16 +150,25 @@
         return;
       }
 
-      // 保存数据到 sessionStorage
-      sessionStorage.setItem('birth_date', birth_date);
-      sessionStorage.setItem('birth_time', birth_time);
-      sessionStorage.setItem('birth_city', birth_city);
-      sessionStorage.setItem('mbti', mbti);
+      try {
+        const response = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
+        });
 
-      console.log('【提交信息】', { birth_date, birth_time, birth_city, mbti });
+        const data = await response.json();
 
-      // 跳转到 loading.html 执行分析
-      window.location.href = 'loading.html';
+        if (data.taskId) {
+          console.log('【收到 TaskId】', data.taskId);
+          window.location.href = `loading.html?taskId=${data.taskId}`;
+        } else {
+          alert('提交失败，请稍后重试。');
+        }
+      } catch (err) {
+        console.error('提交出错:', err);
+        alert('提交失败，请稍后重试。');
+      }
     });
   </script>
 </body>
