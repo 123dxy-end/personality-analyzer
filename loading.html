@@ -32,7 +32,7 @@
       100% { transform: rotate(360deg); }
     }
     #loadingTip { margin-bottom: 20px; }
-    #errorContainer { text-align: center; }
+    #errorContainer { text-align: center; color: #ffb3b3; }
     button {
       margin: 10px;
       padding: 10px 20px;
@@ -52,90 +52,92 @@
   <div id="loadingTip">已等待 0 秒，预计等待 60-120 秒，请耐心等待…</div>
   <div id="errorContainer" style="display: none;"></div>
 
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const taskId = urlParams.get('taskId');
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskId = urlParams.get('taskId');
 
-  if (!taskId) {
-    showError('未获取到任务 ID，请返回首页重新提交。');
-    throw new Error('Missing taskId');
-  }
-
-  let seconds = 0;
-  let retryCount = 0;
-  const maxRetries = 3;
-  let timerId;
-
-  function startTimer() {
-    const tipEl = document.getElementById('loadingTip');
-    timerId = setInterval(() => {
-      seconds++;
-      if (tipEl) tipEl.textContent = `已等待 ${seconds} 秒，预计等待 60-120 秒，请耐心等待…`;
-      if (seconds >= 180) {
-        clearInterval(timerId);
-        showError('已等待超过 3 分钟，请返回首页重试。');
-      }
-    }, 1000);
-  }
-
-  function stopTimer() {
-    clearInterval(timerId);
-  }
-
-  function showError(msg) {
-    const titleEl = document.getElementById('title');
-    const spinnerEl = document.querySelector('.spinner');
-    const tipEl = document.getElementById('loadingTip');
-    const errorContainer = document.getElementById('errorContainer');
-
-    if (titleEl) titleEl.textContent = '出错了：';
-    if (spinnerEl) spinnerEl.style.display = 'none';
-    if (tipEl) tipEl.style.display = 'none';
-    if (errorContainer) {
-      errorContainer.innerHTML = `
-        <pre>${msg}</pre>
-        <button onclick="location.href='index.html'">← 返回首页</button>
-        <button onclick="window.location.reload()">重试</button>
-      `;
-      errorContainer.style.display = 'block';
+    if (!taskId) {
+      showError('未获取到任务 ID，请返回首页重新提交。');
+      throw new Error('Missing taskId');
     }
-  }
 
-  function startPolling() {
-    const statusUrl = `https://personality-analyzer-theta.vercel.app/api/status?taskId=${taskId}`;
-    const intervalId = setInterval(() => {
-      fetch(statusUrl)
-        .then(res => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then(data => {
-          if (data.status === 'done') {
-            clearInterval(intervalId);
-            stopTimer();
-            sessionStorage.setItem('analysisResult', data.result);
-            window.location.href = 'result.html';
-          } else if (data.status === 'failed') {
-            clearInterval(intervalId);
-            stopTimer();
-            showError('任务处理失败，请返回首页重试。');
-          }
-          // pending 继续轮询
-        })
-        .catch(err => {
-          console.error('轮询失败:', err);
-          retryCount++;
-          if (retryCount >= maxRetries) {
-            clearInterval(intervalId);
-            stopTimer();
-            showError('网络异常，请返回首页或重试。');
-          }
-        });
-    }, 1000); // 每 1 秒轮询一次
-  }
+    let seconds = 0;
+    let retryCount = 0;
+    const maxRetries = 3;
+    let timerId;
 
-  startTimer();
-  startPolling();
-</script>
+    function startTimer() {
+      const tipEl = document.getElementById('loadingTip');
+      timerId = setInterval(() => {
+        seconds++;
+        if (tipEl) tipEl.textContent = `已等待 ${seconds} 秒，预计等待 60-120 秒，请耐心等待…`;
+        if (seconds >= 180) {
+          clearInterval(timerId);
+          showError('已等待超过 3 分钟，请返回首页重试。');
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerId);
+    }
+
+    function showError(msg) {
+      const titleEl = document.getElementById('title');
+      const spinnerEl = document.querySelector('.spinner');
+      const tipEl = document.getElementById('loadingTip');
+      const errorContainer = document.getElementById('errorContainer');
+
+      if (titleEl) titleEl.textContent = '出错了：';
+      if (spinnerEl) spinnerEl.style.display = 'none';
+      if (tipEl) tipEl.style.display = 'none';
+      if (errorContainer) {
+        errorContainer.innerHTML = `
+          <pre>${msg}</pre>
+          <button onclick="location.href='index.html'">← 返回首页</button>
+          <button onclick="window.location.reload()">重试</button>
+        `;
+        errorContainer.style.display = 'block';
+      }
+    }
+
+    function startPolling() {
+      const statusUrl = `https://personality-analyzer-theta.vercel.app/api/status?taskId=${taskId}`;
+      const intervalId = setInterval(() => {
+        fetch(statusUrl)
+          .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then(data => {
+            console.log('轮询返回：', data);
+            if (data.status === 'done' && data.result) {
+              clearInterval(intervalId);
+              stopTimer();
+              sessionStorage.setItem('analysisResult', data.result);
+              window.location.href = 'result.html';
+            } else if (data.status === 'failed') {
+              clearInterval(intervalId);
+              stopTimer();
+              showError('任务处理失败，请返回首页重试。');
+            } else {
+              console.log('分析中，继续等待...');
+            }
+          })
+          .catch(err => {
+            console.error('轮询失败:', err);
+            retryCount++;
+            if (retryCount >= maxRetries) {
+              clearInterval(intervalId);
+              stopTimer();
+              showError('网络异常，请返回首页或重试。');
+            }
+          });
+      }, 1000); // 每 1 秒轮询一次
+    }
+
+    startTimer();
+    startPolling();
+  </script>
 </body>
 </html>
