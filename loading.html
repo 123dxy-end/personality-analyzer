@@ -102,7 +102,7 @@
   }
 
   function startPolling() {
-    const statusUrl = `/api/status?taskId=${taskId}`;
+    const statusUrl = `https://personality-analyzer-theta.vercel.app/api/status?taskId=${taskId}`;
     const intervalId = setInterval(() => {
       fetch(statusUrl)
         .then(res => {
@@ -131,7 +131,7 @@
             showError('网络异常，请返回首页或重试。');
           }
         });
-    }, 1000); // 每 1 秒轮询一次，加快响应速度
+    }, 1000); // 每 1 秒轮询一次
   }
 
   startTimer();
