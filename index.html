@@ -22,18 +22,11 @@
       width: 90%;
       max-width: 400px;
       box-shadow: 0 0 12px rgba(0,0,0,0.4);
-    }
-    .form-container h2 {
       text-align: center;
-      margin-bottom: 10px;
     }
-    .form-container p {
-      text-align: center;
-      font-size: 0.9rem;
-      margin-bottom: 30px;
-      color: #b3b3cc;
-    }
-    .form-group { margin-bottom: 20px; }
+    .form-container h2 { margin-bottom: 10px; }
+    .form-container p { font-size: 0.9rem; margin-bottom: 30px; color: #b3b3cc; }
+    .form-group { margin-bottom: 20px; text-align: left; }
     label { display: block; margin-bottom: 5px; font-weight: 600; }
     select, input, button {
       width: 100%;
@@ -49,12 +42,9 @@
       cursor: pointer;
       transition: opacity 0.2s ease;
     }
-    button:hover { opacity: 0.85; }
-    .inline-selects {
-      display: flex;
-      justify-content: space-between;
-      gap: 5px;
-    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:hover:not(:disabled) { opacity: 0.85; }
+    .inline-selects { display: flex; justify-content: space-between; gap: 5px; }
     .inline-selects select { flex: 1; }
   </style>
 </head>
@@ -92,7 +82,7 @@
           <option>ISTP</option><option>ISTJ</option><option>ESTP</option><option>ESTJ</option>
         </select>
       </div>
-      <button type="submit">开始分析</button>
+      <button type="submit" id="submit-btn">开始分析</button>
     </form>
   </div>
 
@@ -103,6 +93,7 @@
       const daySelect = document.getElementById('birth-day');
       const hourSelect = document.getElementById('birth-hour');
       const minuteSelect = document.getElementById('birth-minute');
+      const submitBtn = document.getElementById('submit-btn');
 
       const currentYear = new Date().getFullYear();
       for (let y = currentYear; y >= 1900; y--) {
@@ -135,6 +126,10 @@
       document.getElementById('analysis-form').addEventListener('submit', async function(e) {
         e.preventDefault();
 
+        if (submitBtn.disabled) return; // 防止重复提交
+        submitBtn.disabled = true;
+        submitBtn.textContent = '提交中...';
+
         const birthDate = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
         const birthTime = `${hourSelect.value}:${minuteSelect.value}`;
         const city = document.getElementById('birth-city').value.trim();
@@ -142,6 +137,8 @@
 
         if (!city || !mbti) {
           alert('请填写完整信息后再提交。');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '开始分析';
           return;
         }
 
@@ -164,8 +161,12 @@
         } catch (err) {
           console.error('提交出错:', err);
           alert('提交失败，请稍后重试。');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '开始分析';
         }
       });
     });
   </script>
-</body
+</body>
+</html>
