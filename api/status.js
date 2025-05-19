@@ -28,12 +28,18 @@ export default async function handler(req, res) {
         });
       }
 
-      const parsedData = JSON.parse(taskData);
+      // taskData 已经是对象了，不需要再 JSON.parse 直接用
+      let parsedData;
+      if (typeof taskData === 'string') {
+        parsedData = JSON.parse(taskData);
+      } else {
+        parsedData = taskData;
+      }
 
       return res.status(200).json({
         status: parsedData.status,
         result: parsedData.result || '',
-        data: parsedData.data || {},  // 如果你需要拿到传入的字段，可以通过这个 data 拿到
+        data: parsedData.data || {},
       });
 
     } catch (error) {
@@ -42,27 +48,6 @@ export default async function handler(req, res) {
     }
   }
 
-  if (method === 'POST') {
-    const { taskId, status, result } = req.body;
-
-    if (!taskId || !status) {
-      return res.status(400).json({ error: '缺少 taskId 或 status 参数' });
-    }
-
-    try {
-      await redis.set(taskId, JSON.stringify({
-        status,
-        result: result || '',
-      }));
-
-      return res.status(200).json({ message: '任务状态已更新' });
-
-    } catch (error) {
-      console.error('【写入 Redis 失败】:', error);
-      return res.status(500).json({ status: 'error', message: '服务器内部错误，请稍后重试。' });
-    }
-  }
-
-  res.setHeader('Allow', ['GET', 'POST']);
+  res.setHeader('Allow', ['GET']);
   res.status(405).end('方法不被允许');
 }
