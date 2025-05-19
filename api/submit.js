@@ -1,8 +1,8 @@
 import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
-  url: 'https://proud-starling-28354.upstash.io',  // 在这里填你的 URL
-  token: 'AW7CAAIjcDFkNDBkMmU4MGQ1MDA0NzVmYjg0MzAyNjVmOTM4MzliYXAxMA',  // 在这里填你的 Token
+  url: 'https://proud-starling-28354.upstash.io',
+  token: 'AW7CAAIjcDFkNDBkMmU4MGQ1MDA0NzVmYjg0MzAyNjVmOTM4MzliYXAxMA',
 });
 
 export default async function handler(req, res) {
@@ -12,26 +12,29 @@ export default async function handler(req, res) {
   }
 
   const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-
-  // 保存任务到 Redis
-  await redis.set(taskId, JSON.stringify({
+  const taskData = {
     status: 'pending',
     result: '',
-    data: req.body
-  }));
+    data: req.body,
+  };
 
-  console.log('【任务已创建并存储】Task ID:', taskId);
+  try {
+    await redis.set(taskId, JSON.stringify(taskData));
+    console.log('【任务已创建并存储】Task ID:', taskId);
+  } catch (e) {
+    console.error('【Redis 存储失败】', e);
+    // 不要直接中断程序，继续返回 taskId 给前端
+  }
 
-  // 返回 taskId 给前端
   res.setHeader('Content-Type', 'application/json');
   res.status(200).json({ taskId });
 
-  // 异步调用 Make Webhook
+  // 调用 Webhook
   try {
     const response = await fetch('https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...req.body, taskId })
+      body: JSON.stringify({ ...req.body, taskId }),
     });
 
     if (!response.ok) {
@@ -41,7 +44,7 @@ export default async function handler(req, res) {
       console.log('【调用 Make Webhook 成功】Task ID:', taskId);
     }
   } catch (e) {
-    console.error('【Webhook 调用异常】:', e);
+    console.error('【Webhook 调用异常】', e);
     await redis.set(taskId, JSON.stringify({ status: 'failed', result: '' }));
   }
 }
