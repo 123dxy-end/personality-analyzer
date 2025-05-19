@@ -98,6 +98,7 @@
     for (let m = 1; m <= 12; m++) {
       monthSelect.innerHTML += `<option value="${String(m).padStart(2, '0')}">${m}月</option>`;
     }
+
     function updateDays() {
       const year = parseInt(yearSelect.value);
       const month = parseInt(monthSelect.value);
@@ -107,6 +108,7 @@
         daySelect.innerHTML += `<option value="${String(d).padStart(2, '0')}">${d}日</option>`;
       }
     }
+
     yearSelect.addEventListener('change', updateDays);
     monthSelect.addEventListener('change', updateDays);
     updateDays();
@@ -119,9 +121,9 @@
     }
 
     document.getElementById('analysis-form').addEventListener('submit', async function(e) {
-      e.preventDefault();  // 第一行就阻止默认跳转！
+      e.preventDefault();
 
-      if (submitBtn.disabled) return; 
+      if (submitBtn.disabled) return;
       submitBtn.disabled = true;
       submitBtn.textContent = '提交中...';
 
@@ -137,20 +139,27 @@
         return;
       }
 
-      // ✅ 直接生成 TaskId，并立即跳转 loading 页面
-      const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-      sessionStorage.setItem('pendingTask', JSON.stringify({ birthDate, birthTime, city, mbti, taskId }));
-      window.location.href = `loading.html?taskId=${taskId}`;
-
-      // 异步调用后端 API（不阻塞跳转）
       try {
-        await fetch('/api/submit', {
+        const response = await fetch('/api/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ birthDate, birthTime, city, mbti })
         });
+
+        const data = await response.json();
+
+        if (response.ok && data.taskId) {
+          console.log('收到 taskId:', data.taskId);
+          window.location.href = `loading.html?taskId=${data.taskId}`;
+        } else {
+          alert('提交失败，请稍后重试。');
+        }
       } catch (err) {
         console.error('提交出错:', err);
+        alert('网络异常，请稍后重试。');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '开始分析';
       }
     });
   });
