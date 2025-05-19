@@ -11,18 +11,12 @@ export default async function handler(req, res) {
     return res.status(405).end('只允许 POST 方法');
   }
 
-  // 打印 req.body 确认前端传输内容
-  console.log('【接收到的 req.body】', req.body);
-
+  const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
   const { birthDate, birthTime, city, mbti } = req.body;
 
-  // 参数校验
-  if (!birthDate || !birthTime || !city || !mbti) {
-    console.error('【参数缺失】', { birthDate, birthTime, city, mbti });
-    return res.status(400).json({ error: '缺少必要参数，请检查输入内容。' });
-  }
+  // ✅ 日志打印 req.body 看数据是否正常
+  console.log('【收到的 req.body】:', req.body);
 
-  const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
   const taskData = {
     status: 'pending',
     result: '',
@@ -30,22 +24,24 @@ export default async function handler(req, res) {
   };
 
   try {
-    await redis.set(taskId, JSON.stringify(taskData));
-    console.log('【任务已创建并存储】Task ID:', taskId);
+    // ✅ 确保存储的是 JSON 字符串，而不是对象直接 toString 了
+    const redisValue = JSON.stringify(taskData);
+    await redis.set(taskId, redisValue);
+    console.log('【任务已创建并存储】Task ID:', taskId, 'Data:', redisValue);
   } catch (e) {
     console.error('【Redis 存储失败】', e);
-    return res.status(500).json({ error: 'Redis 存储失败，请稍后重试。' });
   }
 
   res.setHeader('Content-Type', 'application/json');
   res.status(200).json({ taskId });
 
-  // 异步调用 Webhook
+  // ✅ 调用 Webhook，数据直接用 JSON.stringify 序列化普通对象
   try {
+    const webhookBody = JSON.stringify({ birthDate, birthTime, city, mbti, taskId });
     const response = await fetch('https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ birthDate, birthTime, city, mbti, taskId }),
+      body: webhookBody,
     });
 
     if (!response.ok) {
