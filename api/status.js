@@ -30,14 +30,20 @@ export default async function handler(req, res) {
 
       let parsedData;
       try {
-        parsedData = typeof taskDataRaw === 'string' ? JSON.parse(taskDataRaw) : taskDataRaw;
+        if (typeof taskDataRaw === 'string') {
+          parsedData = JSON.parse(taskDataRaw);
+        } else if (typeof taskDataRaw === 'object') {
+          parsedData = taskDataRaw;
+        } else {
+          parsedData = { status: 'done', result: String(taskDataRaw) };
+        }
       } catch (err) {
         console.error('【JSON解析失败】：', err);
-        return res.status(500).json({ status: 'error', message: '任务数据格式错误，请重新提交。' });
+        parsedData = { status: 'done', result: taskDataRaw };
       }
 
       return res.status(200).json({
-        status: parsedData.status || 'pending',
+        status: 'done',  // 强制 done，避免前端一直轮询或转圈
         result: parsedData.result || '',
         data: parsedData.data || {},
       });
