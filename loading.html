@@ -1,3 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>正在分析...</title>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #2e2b5a, #1c1b2e);
+      color: #fff;
+      font-family: "Helvetica Neue", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h1 { font-size: 24px; margin-bottom: 20px; }
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #7657ff;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    #loadingTip { margin-bottom: 20px; }
+    #errorContainer { text-align: center; }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(to right, #a16eff, #7657ff);
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover { opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <h1 id="title">正在分析，请稍等...</h1>
+  <div class="spinner"></div>
+  <div id="loadingTip">已等待 0 秒，预计等待 60-120 秒，请耐心等待…</div>
+  <div id="errorContainer" style="display: none;"></div>
+
 <script>
   const urlParams = new URLSearchParams(window.location.search);
   const taskId = urlParams.get('taskId');
@@ -14,7 +67,7 @@
     const tipEl = document.getElementById('loadingTip');
     timerId = setInterval(() => {
       seconds++;
-      tipEl.textContent = `已等待 ${seconds} 秒，预计等待 60-120 秒，请耐心等待…`;
+      if (tipEl) tipEl.textContent = `已等待 ${seconds} 秒，预计等待 60-120 秒，请耐心等待…`;
       if (seconds >= 180) {
         clearInterval(timerId);
         showError('已等待超过 3 分钟，请返回首页重试。');
@@ -27,16 +80,22 @@
   }
 
   function showError(msg) {
-    document.getElementById('title').textContent = '出错了：';
-    document.querySelector('.spinner').style.display = 'none';
-    document.getElementById('loadingTip').style.display = 'none';
-    const ec = document.getElementById('errorContainer');
-    ec.innerHTML = `
-      <pre>${msg}</pre>
-      <button onclick="location.href='index.html'">← 返回首页</button>
-      <button onclick="window.location.reload()">重试</button>
-    `;
-    ec.style.display = 'block';
+    const titleEl = document.getElementById('title');
+    const spinnerEl = document.querySelector('.spinner');
+    const tipEl = document.getElementById('loadingTip');
+    const errorContainer = document.getElementById('errorContainer');
+
+    if (titleEl) titleEl.textContent = '出错了：';
+    if (spinnerEl) spinnerEl.style.display = 'none';
+    if (tipEl) tipEl.style.display = 'none';
+    if (errorContainer) {
+      errorContainer.innerHTML = `
+        <pre>${msg}</pre>
+        <button onclick="location.href='index.html'">← 返回首页</button>
+        <button onclick="window.location.reload()">重试</button>
+      `;
+      errorContainer.style.display = 'block';
+    }
   }
 
   function startPolling() {
@@ -58,7 +117,7 @@
             stopTimer();
             showError('任务处理失败，请返回首页重试。');
           }
-          // 如果是 pending，不做任何操作，继续轮询
+          // 如果是 pending，则继续轮询
         })
         .catch(err => {
           clearInterval(intervalId);
@@ -66,9 +125,11 @@
           console.error('轮询失败:', err);
           showError(err.message || '未知错误');
         });
-    }, 1000); // 每秒轮询一次
+    }, 3000); // 每 3 秒轮询一次
   }
 
   startTimer();
   startPolling();
 </script>
+</body>
+</html>
