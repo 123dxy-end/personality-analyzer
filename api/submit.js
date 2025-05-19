@@ -11,13 +11,22 @@ export default async function handler(req, res) {
     return res.status(405).end('只允许 POST 方法');
   }
 
-  const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
-  const { birthDate, birthTime, city, mbti } = req.body;  // 提取必要字段
+  // 打印 req.body 确认前端传输内容
+  console.log('【接收到的 req.body】', req.body);
 
+  const { birthDate, birthTime, city, mbti } = req.body;
+
+  // 参数校验
+  if (!birthDate || !birthTime || !city || !mbti) {
+    console.error('【参数缺失】', { birthDate, birthTime, city, mbti });
+    return res.status(400).json({ error: '缺少必要参数，请检查输入内容。' });
+  }
+
+  const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
   const taskData = {
     status: 'pending',
     result: '',
-    data: { birthDate, birthTime, city, mbti }, // 确保 data 里是普通对象，不是复杂结构
+    data: { birthDate, birthTime, city, mbti },
   };
 
   try {
@@ -25,6 +34,7 @@ export default async function handler(req, res) {
     console.log('【任务已创建并存储】Task ID:', taskId);
   } catch (e) {
     console.error('【Redis 存储失败】', e);
+    return res.status(500).json({ error: 'Redis 存储失败，请稍后重试。' });
   }
 
   res.setHeader('Content-Type', 'application/json');
