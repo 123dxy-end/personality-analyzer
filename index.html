@@ -135,12 +135,12 @@
       document.getElementById('analysis-form').addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const birth_date = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
-        const birth_time = `${hourSelect.value}:${minuteSelect.value}`;
-        const birth_city = document.getElementById('birth-city').value.trim();
+        const birthDate = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
+        const birthTime = `${hourSelect.value}:${minuteSelect.value}`;
+        const city = document.getElementById('birth-city').value.trim();
         const mbti = document.getElementById('mbti').value;
 
-        if (!birth_city || !mbti) {
+        if (!city || !mbti) {
           alert('请填写完整信息后再提交。');
           return;
         }
@@ -149,15 +149,16 @@
           const response = await fetch('/api/submit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ birth_date, birth_time, birth_city, mbti })
+            body: JSON.stringify({ birthDate, birthTime, city, mbti })
           });
 
           const data = await response.json();
 
-          if (data.taskId) {
+          if (response.ok && data.taskId) {
             console.log('【收到 TaskId】', data.taskId);
             window.location.href = `loading.html?taskId=${data.taskId}`;
           } else {
+            console.error('【提交失败】状态码:', response.status, '返回内容:', data);
             alert('提交失败，请稍后重试。');
           }
         } catch (err) {
@@ -167,5 +168,4 @@
       });
     });
   </script>
-</body>
-</html>
+</body
