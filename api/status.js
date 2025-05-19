@@ -1,8 +1,8 @@
 import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
-  url: 'https://proud-starling-28354.upstash.io',  // 在这里填你的 URL
-  token: 'AW7CAAIjcDFkNDBkMmU4MGQ1MDA0NzVmYjg0MzAyNjVmOTM4MzliYXAxMA',  // 在这里填你的 Token
+  url: 'https://proud-starling-28354.upstash.io',  // 填写你的 Redis URL
+  token: 'AW7CAAIjcDFkNDBkMmU4MGQ1MDA0NzVmYjg0MzAyNjVmOTM4MzliYXAxMA',  // 填写你的 Redis Token
 });
 
 export default async function handler(req, res) {
@@ -13,24 +13,32 @@ export default async function handler(req, res) {
 
   if (method === 'GET') {
     const { taskId } = req.query;
+
     if (!taskId) {
-      return res.status(400).json({ error: '缺少 taskId 参数' });
+      return res.status(400).json({ status: 'error', message: '缺少 taskId 参数' });
     }
 
-    const taskData = await redis.get(taskId);
-    if (!taskData) {
-      console.warn(`【状态查询】未找到任务: ${taskId}`);
-      return res.status(404).json({
-        status: 'not_found',
-        message: '任务不存在，请返回首页重新提交。'
+    try {
+      const taskData = await redis.get(taskId);
+
+      if (!taskData) {
+        return res.status(404).json({
+          status: 'not_found',
+          message: '任务不存在，请返回首页重新提交。'
+        });
+      }
+
+      const parsedData = JSON.parse(taskData);
+
+      return res.status(200).json({
+        status: parsedData.status,
+        result: parsedData.result || ''
       });
-    }
 
-    const task = JSON.parse(taskData);
-    return res.status(200).json({
-      status: task.status,
-      result: task.result || ''
-    });
+    } catch (error) {
+      console.error('【查询 Redis 失败】:', error);
+      return res.status(500).json({ status: 'error', message: '服务器内部错误，请稍后重试。' });
+    }
   }
 
   if (method === 'POST') {
@@ -40,13 +48,18 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '缺少 taskId 或 status 参数' });
     }
 
-    await redis.set(taskId, JSON.stringify({
-      status,
-      result: result || ''
-    }));
+    try {
+      await redis.set(taskId, JSON.stringify({
+        status,
+        result: result || ''
+      }));
 
-    console.log(`【状态更新】TaskID: ${taskId} 状态更新为: ${status}`);
-    return res.status(200).json({ message: '任务状态已更新' });
+      return res.status(200).json({ message: '任务状态已更新' });
+
+    } catch (error) {
+      console.error('【写入 Redis 失败】:', error);
+      return res.status(500).json({ status: 'error', message: '服务器内部错误，请稍后重试。' });
+    }
   }
 
   res.setHeader('Allow', ['GET', 'POST']);
