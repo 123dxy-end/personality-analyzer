@@ -1,8 +1,8 @@
 import { Redis } from '@upstash/redis';
 
 const redis = new Redis({
-  url: 'https://proud-starling-28354.upstash.io',  // 填写你的 Redis URL
-  token: 'AW7CAAIjcDFkNDBkMmU4MGQ1MDA0NzVmYjg0MzAyNjVmOTM4MzliYXAxMA',  // 填写你的 Redis Token
+  url: 'https://proud-starling-28354.upstash.io',
+  token: 'AW7CAAIjcDFkNDBkMmU4MGQ1MDA0NzVmYjg0MzAyNjVmOTM4MzliYXAxMA',
 });
 
 export default async function handler(req, res) {
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       if (!taskData) {
         return res.status(404).json({
           status: 'not_found',
-          message: '任务不存在，请返回首页重新提交。'
+          message: '任务不存在，请返回首页重新提交。',
         });
       }
 
@@ -32,7 +32,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         status: parsedData.status,
-        result: parsedData.result || ''
+        result: parsedData.result || '',
+        data: parsedData.data || {},  // 如果你需要拿到传入的字段，可以通过这个 data 拿到
       });
 
     } catch (error) {
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
     try {
       await redis.set(taskId, JSON.stringify({
         status,
-        result: result || ''
+        result: result || '',
       }));
 
       return res.status(200).json({ message: '任务状态已更新' });
