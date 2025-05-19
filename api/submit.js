@@ -12,10 +12,12 @@ export default async function handler(req, res) {
   }
 
   const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+  const { birthDate, birthTime, city, mbti } = req.body;  // 提取必要字段
+
   const taskData = {
     status: 'pending',
     result: '',
-    data: req.body,
+    data: { birthDate, birthTime, city, mbti }, // 确保 data 里是普通对象，不是复杂结构
   };
 
   try {
@@ -23,18 +25,17 @@ export default async function handler(req, res) {
     console.log('【任务已创建并存储】Task ID:', taskId);
   } catch (e) {
     console.error('【Redis 存储失败】', e);
-    // 不要直接中断程序，继续返回 taskId 给前端
   }
 
   res.setHeader('Content-Type', 'application/json');
   res.status(200).json({ taskId });
 
-  // 调用 Webhook
+  // 异步调用 Webhook
   try {
     const response = await fetch('https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...req.body, taskId }),
+      body: JSON.stringify({ birthDate, birthTime, city, mbti, taskId }),
     });
 
     if (!response.ok) {
