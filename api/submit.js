@@ -14,7 +14,6 @@ export default async function handler(req, res) {
   const taskId = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
   const { birthDate, birthTime, city, mbti } = req.body;
 
-  // ✅ 日志打印 req.body 看数据是否正常
   console.log('【收到的 req.body】:', req.body);
 
   const taskData = {
@@ -24,7 +23,6 @@ export default async function handler(req, res) {
   };
 
   try {
-    // ✅ 确保存储的是 JSON 字符串，而不是对象直接 toString 了
     const redisValue = JSON.stringify(taskData);
     await redis.set(taskId, redisValue);
     console.log('【任务已创建并存储】Task ID:', taskId, 'Data:', redisValue);
@@ -32,10 +30,6 @@ export default async function handler(req, res) {
     console.error('【Redis 存储失败】', e);
   }
 
-  res.setHeader('Content-Type', 'application/json');
-  res.status(200).json({ taskId });
-
-  // ✅ 调用 Webhook，数据直接用 JSON.stringify 序列化普通对象
   try {
     const webhookBody = JSON.stringify({ birthDate, birthTime, city, mbti, taskId });
     const response = await fetch('https://hook.us2.make.com/qc2cyluvofpxxcwiaqsiap59uc9quex8', {
@@ -54,4 +48,8 @@ export default async function handler(req, res) {
     console.error('【Webhook 调用异常】', e);
     await redis.set(taskId, JSON.stringify({ status: 'failed', result: '' }));
   }
+
+  // ✅ 最终响应放在最后
+  res.setHeader('Content-Type', 'application/json');
+  res.status(200).json({ taskId });
 }
