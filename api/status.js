@@ -19,31 +19,31 @@ export default async function handler(req, res) {
     }
 
     try {
-      const taskData = await redis.get(taskId);
+      const taskDataRaw = await redis.get(taskId);
 
-      if (!taskData) {
+      if (!taskDataRaw) {
         return res.status(404).json({
           status: 'not_found',
           message: '任务不存在，请返回首页重新提交。',
         });
       }
 
-      // taskData 已经是对象了，不需要再 JSON.parse 直接用
       let parsedData;
-      if (typeof taskData === 'string') {
-        parsedData = JSON.parse(taskData);
-      } else {
-        parsedData = taskData;
+      try {
+        parsedData = typeof taskDataRaw === 'string' ? JSON.parse(taskDataRaw) : taskDataRaw;
+      } catch (err) {
+        console.error('【JSON解析失败】：', err);
+        return res.status(500).json({ status: 'error', message: '任务数据格式错误，请重新提交。' });
       }
 
       return res.status(200).json({
-        status: parsedData.status,
+        status: parsedData.status || 'pending',
         result: parsedData.result || '',
         data: parsedData.data || {},
       });
 
     } catch (error) {
-      console.error('【查询 Redis 失败】:', error);
+      console.error('【查询 Redis 失败】：', error);
       return res.status(500).json({ status: 'error', message: '服务器内部错误，请稍后重试。' });
     }
   }
