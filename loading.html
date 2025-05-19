@@ -15,6 +15,7 @@
       justify-content: center;
       height: 100vh;
       margin: 0;
+      text-align: center;
     }
     h1 { font-size: 24px; margin-bottom: 20px; }
     .spinner {
@@ -61,6 +62,8 @@
   }
 
   let seconds = 0;
+  let retryCount = 0;
+  const maxRetries = 3;
   let timerId;
 
   function startTimer() {
@@ -117,15 +120,18 @@
             stopTimer();
             showError('任务处理失败，请返回首页重试。');
           }
-          // 如果是 pending，则继续轮询
+          // pending 继续轮询
         })
         .catch(err => {
-          clearInterval(intervalId);
-          stopTimer();
           console.error('轮询失败:', err);
-          showError(err.message || '未知错误');
+          retryCount++;
+          if (retryCount >= maxRetries) {
+            clearInterval(intervalId);
+            stopTimer();
+            showError('网络异常，请返回首页或重试。');
+          }
         });
-    }, 3000); // 每 3 秒轮询一次
+    }, 1000); // 每 1 秒轮询一次，加快响应速度
   }
 
   startTimer();
