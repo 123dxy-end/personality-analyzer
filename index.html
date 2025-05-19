@@ -86,87 +86,90 @@
     </form>
   </div>
 
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const yearSelect = document.getElementById('birth-year');
-      const monthSelect = document.getElementById('birth-month');
-      const daySelect = document.getElementById('birth-day');
-      const hourSelect = document.getElementById('birth-hour');
-      const minuteSelect = document.getElementById('birth-minute');
-      const submitBtn = document.getElementById('submit-btn');
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const yearSelect = document.getElementById('birth-year');
+    const monthSelect = document.getElementById('birth-month');
+    const daySelect = document.getElementById('birth-day');
+    const hourSelect = document.getElementById('birth-hour');
+    const minuteSelect = document.getElementById('birth-minute');
+    const submitBtn = document.getElementById('submit-btn');
 
-      const currentYear = new Date().getFullYear();
-      for (let y = currentYear; y >= 1900; y--) {
-        yearSelect.innerHTML += `<option value="${y}">${y}年</option>`;
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear; y >= 1900; y--) {
+      yearSelect.innerHTML += `<option value="${y}">${y}年</option>`;
+    }
+    for (let m = 1; m <= 12; m++) {
+      monthSelect.innerHTML += `<option value="${String(m).padStart(2, '0')}">${m}月</option>`;
+    }
+
+    function updateDays() {
+      const year = parseInt(yearSelect.value);
+      const month = parseInt(monthSelect.value);
+      const days = new Date(year, month, 0).getDate();
+      daySelect.innerHTML = '';
+      for (let d = 1; d <= days; d++) {
+        daySelect.innerHTML += `<option value="${String(d).padStart(2, '0')}">${d}日</option>`;
       }
-      for (let m = 1; m <= 12; m++) {
-        monthSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}月</option>`;
+    }
+    yearSelect.addEventListener('change', updateDays);
+    monthSelect.addEventListener('change', updateDays);
+    updateDays();
+
+    for (let h = 0; h < 24; h++) {
+      hourSelect.innerHTML += `<option value="${String(h).padStart(2, '0')}">${h}时</option>`;
+    }
+    for (let m = 0; m < 60; m++) {
+      minuteSelect.innerHTML += `<option value="${String(m).padStart(2, '0')}">${m}分</option>`;
+    }
+
+    document.getElementById('analysis-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (submitBtn.disabled) return;
+      submitBtn.disabled = true;
+      submitBtn.textContent = '提交中...';
+
+      const birthDate = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
+      const birthTime = `${hourSelect.value}:${minuteSelect.value}`;
+      const city = document.getElementById('birth-city').value.trim();
+      const mbti = document.getElementById('mbti').value;
+
+      if (!city || !mbti) {
+        alert('请填写完整信息后再提交。');
+        resetButton();
+        return;
       }
 
-      function updateDays() {
-        const year = parseInt(yearSelect.value);
-        const month = parseInt(monthSelect.value);
-        const days = new Date(year, month, 0).getDate();
-        daySelect.innerHTML = '';
-        for (let d = 1; d <= days; d++) {
-          daySelect.innerHTML += `<option value="${d.toString().padStart(2, '0')}">${d}日</option>`;
-        }
-      }
-      yearSelect.addEventListener('change', updateDays);
-      monthSelect.addEventListener('change', updateDays);
-      updateDays();
+      try {
+        const response = await fetch('/api/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ birthDate, birthTime, city, mbti })
+        });
 
-      for (let h = 0; h < 24; h++) {
-        hourSelect.innerHTML += `<option value="${h.toString().padStart(2, '0')}">${h}时</option>`;
-      }
-      for (let m = 0; m < 60; m++) {
-        minuteSelect.innerHTML += `<option value="${m.toString().padStart(2, '0')}">${m}分</option>`;
-      }
+        const data = await response.json();
 
-      document.getElementById('analysis-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-
-        if (submitBtn.disabled) return; // 防止重复提交
-        submitBtn.disabled = true;
-        submitBtn.textContent = '提交中...';
-
-        const birthDate = `${yearSelect.value}-${monthSelect.value}-${daySelect.value}`;
-        const birthTime = `${hourSelect.value}:${minuteSelect.value}`;
-        const city = document.getElementById('birth-city').value.trim();
-        const mbti = document.getElementById('mbti').value;
-
-        if (!city || !mbti) {
-          alert('请填写完整信息后再提交。');
-          submitBtn.disabled = false;
-          submitBtn.textContent = '开始分析';
-          return;
-        }
-
-        try {
-          const response = await fetch('/api/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ birthDate, birthTime, city, mbti })
-          });
-
-          const data = await response.json();
-
-          if (response.ok && data.taskId) {
-            console.log('【收到 TaskId】', data.taskId);
-            window.location.href = `loading.html?taskId=${data.taskId}`;
-          } else {
-            console.error('【提交失败】状态码:', response.status, '返回内容:', data);
-            alert('提交失败，请稍后重试。');
-          }
-        } catch (err) {
-          console.error('提交出错:', err);
+        if (response.ok && data.taskId) {
+          console.log('【收到 TaskId】', data.taskId);
+          window.location.href = `loading.html?taskId=${data.taskId}`;
+        } else {
+          console.error('【提交失败】状态码:', response.status, '返回内容:', data);
           alert('提交失败，请稍后重试。');
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.textContent = '开始分析';
+          resetButton();
         }
-      });
+      } catch (err) {
+        console.error('提交出错:', err);
+        alert('提交失败，请稍后重试。');
+        resetButton();
+      }
     });
-  </script>
+
+    function resetButton() {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '开始分析';
+    }
+  });
+</script>
 </body>
 </html>
