@@ -46,19 +46,17 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    /* 1. 读取原始数据 */
+    /* 1. 读取原始分析结果 */
     const raw = sessionStorage.getItem('analysisResult') || '';
     let content;
 
-    /* 2. 若是 JSON 字符串就提取 result 字段，否则直接用原文 */
+    /* 2. 如果是 JSON，就提 result；否则直接用原文 */
     try{
       const obj = JSON.parse(raw);
       content = obj.result || raw;
-    }catch(e){
-      content = raw;
-    }
+    }catch{ content = raw; }
 
-    /* 3. 反转义 & 去掉 {"status":"done","result":" 前缀 */
+    /* 3. 清掉 {"status":"done","result": 开头以及末尾 "} 并反转义 */
     content = content
       .replace(/^\s*\{\s*"status"\s*:\s*"done"\s*,\s*"result"\s*:\s*"?/i,'')
       .replace(/"}\s*$/,'')
@@ -66,43 +64,59 @@
       .replace(/\\n/g,'\n')
       .trim();
 
-    /* 4. 如果仍然有前缀残留，再次粗暴截到第一个 ** 之后 */
+    /* 4. 若仍有前缀残留，再粗暴截到第一个 ** 之后 */
     const firstStar = content.indexOf('**');
-    if(firstStar!==-1) content = content.slice(firstStar);
+    if(firstStar !== -1) content = content.slice(firstStar);
 
-    /* 5. 把 Markdown 风格文本转成 HTML（最原始表格逻辑） */
+    /* ========= 格式化函数 ========= */
     function formatContent(text){
-      /* 5-1. 章节粗体 → <h2>（保留 emoji） */
-      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*(.+?)\*\*/g,
-        (_,e,t)=>`<h2>${e?e+' ':''}${t}</h2>`);
-
       const lines = text.split('\n');
-      let html='',inTable=false;
+      let html = '', inTable = false;
 
       lines.forEach(line=>{
-        if(line.includes('|')){                           /* —— 视为表格行 —— */
+        const trimmed = line.trim();
+
+        /* 4-1  遇到章节粗体行（**开头）——先关表格，再输出标题 */
+        if(trimmed.startsWith('**')){
+          if(inTable){ html += '</table>'; inTable = false; }
+
+          /* 把 **标题** 和可能的 emoji 转 <h2> */
+          const processed = trimmed.replace(
+            /(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*(.+?)\*\*/,
+            (_,e,t)=>`<h2>${e?e+' ':''}${t}</h2>`
+          );
+          html += processed;
+          return;
+        }
+
+        /* 4-2 含 | 的行 —— 按最原始逻辑做表格 */
+        if(line.includes('|')){
           const cells = line.split('|').map(c=>c.trim());
           if(!inTable){
-            inTable=true; html+='<table><tr>';
-            cells.forEach(c=>{ html+=`<th>${c}</th>`; });
-            html+='</tr>';
+            inTable = true;
+            html += '<table><tr>';
+            cells.forEach(c=>{ html += `<th>${c}</th>`; });
+            html += '</tr>';
           }else{
-            html+='<tr>'; cells.forEach(c=>{ html+=`<td>${c}</td>`; }); html+='</tr>';
+            html += '<tr>';
+            cells.forEach(c=>{ html += `<td>${c}</td>`; });
+            html += '</tr>';
           }
-        }else{                                           /* —— 普通段落 —— */
-          if(inTable){ html+='</table>'; inTable=false; }
-          if(line.trim()) html+=`<p>${line}</p>`;
+        }else{
+          if(inTable){ html += '</table>'; inTable = false; }
+          if(trimmed) html += `<p>${trimmed}</p>`;
         }
       });
-      if(inTable) html+='</table>';
+
+      if(inTable) html += '</table>';
       return html;
     }
 
-    /* 6. 渲染到页面 */
+    /* 5. 渲染 */
     document.getElementById('analysis').innerHTML =
       content ? formatContent(content) : '<p>暂无结果，请返回首页重试。</p>';
 
-    /* 7. 保存为图片 */
+    /* 6. 保存为图片 */
     function saveAsImage(){
       html2canvas(document.getElementById('analysis'),{backgroundColor:null})
         .then(canvas=>{
