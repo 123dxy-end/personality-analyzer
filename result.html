@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>你的个性分析报告</title>
+  <title>AI人格测试</title>
   <style>
     body {
       margin: 0;
@@ -98,7 +98,7 @@
 </head>
 <body>
   <header>
-    <h1>你的个性分析报告</h1>
+    <h1>AI人格测试</h1>
   </header>
   <div class="report-container">
     <div class="report" id="analysis">加载中，请稍候…</div>
@@ -120,8 +120,10 @@
       content = raw;
     }
 
+    // 删除前缀干扰字符，如 {"status":"done","result":" 开头等
+    content = content.replace(/^\{.*?"result"\s*:\s*"?/, '').replace(/"}$/, '');
+
     function formatContent(text) {
-      // 章节大标题格式：🧭 一、核心人格主轴
       text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)\s*\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
 
       const lines = text.split('\n');
@@ -129,7 +131,8 @@
       let inTable = false;
 
       lines.forEach(line => {
-        if (line.includes('|')) {
+        // 忽略纯空白的表格行，防止生成空表头
+        if (line.includes('|') && line.trim().replace(/\|/g, '').trim() !== '') {
           const cells = line.split('|').map(cell => cell.trim());
           if (!inTable) {
             inTable = true;
