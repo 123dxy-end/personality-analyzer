@@ -5,11 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI人格测试</title>
   <style>
-    body{
-      margin:0;padding:0;background:#1a1133;color:#ececff;
+    body{margin:0;padding:0;background:#1a1133;color:#ececff;
       font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
-      display:flex;flex-direction:column;min-height:100vh;
-    }
+      display:flex;flex-direction:column;min-height:100vh;}
     header{text-align:center;padding:30px 20px;background:#2a1b4d;
       box-shadow:0 2px 8px rgba(0,0,0,.6)}
     header h1{margin:0;font-size:2.2rem;color:#d1b2ff}
@@ -45,87 +43,75 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    /* 获取原始分析结果 */
+    /* 1. 拿到原始数据 */
     const raw = sessionStorage.getItem('analysisResult') || '';
     let content;
+    try{ const obj = JSON.parse(raw); content = obj.result || raw; }
+    catch{ content = raw; }
 
-    /* 若是 JSON，则提取 result 字段 */
-    try{
-      const obj = JSON.parse(raw);
-      content = obj.result || raw;
-    }catch(e){
-      content = raw;
-    }
-
-    /* —— 前缀清理：砍掉第一个 ** 之前所有字符 —— */
+    /* 2. 删掉前缀到第一个 ** 之前所有内容，并做反转义 */
     const firstStar = content.indexOf('**');
     if(firstStar !== -1) content = content.slice(firstStar);
+    content = content.replace(/\\"/g,'"').replace(/\\n/g,'\n')
+                     .replace(/^"+|"+$/g,'').trim();
 
-    /* 反转义、去首尾多余引号 */
-    content = content
-      .replace(/\\"/g,'"')
-      .replace(/\\n/g,'\n')
-      .replace(/^"+|"+$/g,'')
-      .trim();
-
-    /* ======== 核心格式化函数 ======== */
+    /* 3. 格式化函数 */
     function formatContent(text){
-      /* 1. **加粗标题** → <h2>，并去掉括号说明 */
+      /* 标题：**xxx** → <h2>，括号说明删除 */
       text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*([^*]+?)\*\*/g,
-        (_,emoji,title)=>{
-          const clean = title.replace(/（[^）]+）|\([^)]*\)/g,'').trim(); // 去括号
-          return `<h2>${emoji?emoji+' ':''}${clean}</h2>`;
-        });
+        (_,e,t)=>`<h2>${e?e+' ':''}${t.replace(/（[^）]+）|\([^)]*\)/g,'').trim()}</h2>`);
 
       const lines = text.split('\n');
-      let html = '', inTable = false;
+      let html='', inTable=false, expectedCols=0;
 
-      /* 判断 Markdown 分隔行  | --- | --- | */
-      const isDivider = l => /^(\s*\|?\s*-+\s*)+\|?\s*$/.test(l);
-
-      /* 有效表格行：包含 ≥2 个非空单元格，且不是分隔行 */
-      const isTableRow = l =>{
-        if(!l.includes('|') || isDivider(l)) return false;
-        const cells = l.split('|').map(c=>c.trim()).filter(c=>c);
-        return cells.length >= 2;
-      };
+      const isDivider = l=>/^(\s*\|?\s*[-—-]+?\s*)+\|?\s*$/.test(l);
+      const dashOnly  = c=>/^[-—-]+$/.test(c);
 
       lines.forEach(line=>{
-        if(isTableRow(line)){
-          const cells = line.split('|').map(c=>c.trim()).filter(c=>c);
-          if(!inTable){
-            inTable = true;
-            html += '<table><tr>';
-            cells.forEach(c=>html+=`<th>${c}</th>`);
-            html += '</tr>';
-          }else{
-            html += '<tr>';
-            cells.forEach(c=>html+=`<td>${c}</td>`);
-            html += '</tr>';
-          }
-        }else{
-          if(inTable){ html += '</table>'; inTable = false; }
-          if(line.trim()) html += `<p>${line}</p>`;
+        const rawCells = line.split('|').map(c=>c.trim());
+        const cells = rawCells.filter(c=>c);                    // 非空单元格
+        const cellCnt = cells.length;
+        const allDash = cells.length && cells.every(dashOnly);
+
+        /* ---------- 关闭表格的情形 ---------- */
+        if(inTable && (
+           !line.includes('|') ||             // 没管道符
+           isDivider(line)   || allDash ||    // 分隔行或全破折号
+           cellCnt!==expectedCols             // 列数不同
+        )){
+          html+='</table>'; inTable=false;
         }
+
+        /* ---------- 开/续表格 ---------- */
+        if(!inTable && cellCnt>=2 && !isDivider(line) && !allDash){
+          /* 新开表格 */
+          inTable=true; expectedCols=cellCnt;
+          html+='<table><tr>'; cells.forEach(c=>html+=`<th>${c}</th>`); html+='</tr>';
+        }else if(inTable && cellCnt===expectedCols && !allDash){
+          /* 继续表格 */
+          html+='<tr>'; cells.forEach(c=>html+=`<td>${c}</td>`); html+='</tr>';
+        }else if(!inTable && line.trim()){
+          /* 普通段落 */
+          html+=`<p>${line}</p>`;
+        }
+        /* 分隔行或破折号行在此被忽略 */
       });
 
-      if(inTable) html += '</table>';
+      if(inTable) html+='</table>';
       return html;
     }
 
-    /* 渲染到页面 */
-    const analysisEl = document.getElementById('analysis');
-    analysisEl.innerHTML = content ? formatContent(content)
-                                   : '<p>暂无结果，请返回首页重试。</p>';
+    /* 4. 渲染到页面 */
+    document.getElementById('analysis').innerHTML =
+      content ? formatContent(content) : '<p>暂无结果，请返回首页重试。</p>';
 
-    /* 保存为图片 */
+    /* 5. 保存为图片 */
     function saveAsImage(){
-      html2canvas(analysisEl,{backgroundColor:null})
-        .then(canvas=>{
+      html2canvas(document.getElementById('analysis'),{backgroundColor:null})
+        .then(c=>{
           const link=document.createElement('a');
           link.download='分析报告.png';
-          link.href=canvas.toDataURL();
-          link.click();
+          link.href=c.toDataURL(); link.click();
         });
     }
   </script>
