@@ -45,11 +45,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    /* 取得原始结果 */
+    /* 获取原始分析结果 */
     const raw = sessionStorage.getItem('analysisResult') || '';
     let content;
 
-    /* 先尝试 JSON 解析（如果是纯 JSON） */
+    /* 若是 JSON，则提取 result 字段 */
     try{
       const obj = JSON.parse(raw);
       content = obj.result || raw;
@@ -57,20 +57,20 @@
       content = raw;
     }
 
-    /* === 前缀清理：砍掉出现在第一个 ** 之前的所有字符 === */
+    /* —— 前缀清理：砍掉第一个 ** 之前所有字符 —— */
     const firstStar = content.indexOf('**');
-    if(firstStar !== -1){ content = content.slice(firstStar); }
+    if(firstStar !== -1) content = content.slice(firstStar);
 
-    /* 反转义并去首尾引号 */
+    /* 反转义、去首尾多余引号 */
     content = content
       .replace(/\\"/g,'"')
       .replace(/\\n/g,'\n')
       .replace(/^"+|"+$/g,'')
       .trim();
 
-    /* 将正文转成 HTML */
+    /* ======== 核心格式化函数 ======== */
     function formatContent(text){
-      /* 1) 把 **标题** → <h2>，并去掉括号说明 */
+      /* 1. **加粗标题** → <h2>，并去掉括号说明 */
       text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*([^*]+?)\*\*/g,
         (_,emoji,title)=>{
           const clean = title.replace(/（[^）]+）|\([^)]*\)/g,'').trim(); // 去括号
@@ -78,36 +78,49 @@
         });
 
       const lines = text.split('\n');
-      let html='',inTable=false;
+      let html = '', inTable = false;
 
-      const isDivider = l=>/^(\s*\|?\s*-+\s*)+\|?\s*$/.test(l);
+      /* 判断 Markdown 分隔行  | --- | --- | */
+      const isDivider = l => /^(\s*\|?\s*-+\s*)+\|?\s*$/.test(l);
+
+      /* 有效表格行：包含 ≥2 个非空单元格，且不是分隔行 */
+      const isTableRow = l =>{
+        if(!l.includes('|') || isDivider(l)) return false;
+        const cells = l.split('|').map(c=>c.trim()).filter(c=>c);
+        return cells.length >= 2;
+      };
 
       lines.forEach(line=>{
-        if(line.includes('|') && !isDivider(line) && line.trim().replace(/\|/g,'').trim()!==''){
-          /* 处理表格行 */
-          const cells = line.split('|').map(c=>c.trim()).filter((c,i)=>!(i===0&&c==='')); // 剔掉首个空单元
+        if(isTableRow(line)){
+          const cells = line.split('|').map(c=>c.trim()).filter(c=>c);
           if(!inTable){
-            inTable=true; html+='<table><tr>';
-            cells.forEach(c=>html+=`<th>${c}</th>`); html+='</tr>';
+            inTable = true;
+            html += '<table><tr>';
+            cells.forEach(c=>html+=`<th>${c}</th>`);
+            html += '</tr>';
           }else{
-            html+='<tr>'; cells.forEach(c=>html+=`<td>${c}</td>`); html+='</tr>';
+            html += '<tr>';
+            cells.forEach(c=>html+=`<td>${c}</td>`);
+            html += '</tr>';
           }
         }else{
-          if(inTable){ html+='</table>'; inTable=false; }
-          if(line.trim()) html+=`<p>${line}</p>`;
+          if(inTable){ html += '</table>'; inTable = false; }
+          if(line.trim()) html += `<p>${line}</p>`;
         }
       });
-      if(inTable) html+='</table>';
+
+      if(inTable) html += '</table>';
       return html;
     }
 
+    /* 渲染到页面 */
     const analysisEl = document.getElementById('analysis');
     analysisEl.innerHTML = content ? formatContent(content)
                                    : '<p>暂无结果，请返回首页重试。</p>';
 
-    /* 保存为图片功能 */
+    /* 保存为图片 */
     function saveAsImage(){
-      html2canvas(document.getElementById('analysis'),{backgroundColor:null})
+      html2canvas(analysisEl,{backgroundColor:null})
         .then(canvas=>{
           const link=document.createElement('a');
           link.download='分析报告.png';
