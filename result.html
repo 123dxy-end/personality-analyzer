@@ -5,104 +5,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI人格测试</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: #1a1133;
-      color: #ececff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
+    body{
+      margin:0;padding:0;background:#1a1133;color:#ececff;
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      display:flex;flex-direction:column;min-height:100vh;
     }
-    header {
-      text-align: center;
-      padding: 30px 20px;
-      background: #2a1b4d;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 2.2rem;
-      color: #d1b2ff;
-    }
-    .report-container {
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 20px;
-      overflow-y: auto;
-    }
-    .report {
-      background: #2a1b4d;
-      padding: 30px;
-      border-radius: 12px;
-      max-width: 800px;
-      width: 100%;
-      box-shadow: 0 0 15px rgba(122, 93, 240, 0.4);
-      overflow-y: auto;
-      white-space: normal;
-      line-height: 1.8;
-      font-size: 1rem;
-    }
-    .report h2 {
-      margin-top: 1.5em;
-      color: #b095ff;
-      font-size: 1.4rem;
-    }
-    .report p {
-      margin: 1em 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1.5em 0;
-    }
-    table, th, td {
-      border: 1px solid #7151cc;
-    }
-    th, td {
-      padding: 12px;
-      text-align: left;
-    }
-    th {
-      background-color: #3a236f;
-      color: #d1b2ff;
-    }
-    td {
-      background-color: #4a2a8a;
-      color: #ececff;
-    }
-    .button-group {
-      text-align: center;
-      padding: 20px;
-      background: #2a1b4d;
-    }
-    .btn {
-      margin: 0 10px;
-      padding: 12px 24px;
-      background: linear-gradient(to right, #a88bff, #7a5df0);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.3s;
-    }
-    .btn:hover {
-      background: linear-gradient(to right, #7a5df0, #a88bff);
-    }
+    header{text-align:center;padding:30px 20px;background:#2a1b4d;
+      box-shadow:0 2px 8px rgba(0,0,0,.6)}
+    header h1{margin:0;font-size:2.2rem;color:#d1b2ff}
+    .report-container{flex:1;display:flex;justify-content:center;align-items:flex-start;
+      padding:20px;overflow-y:auto}
+    .report{background:#2a1b4d;padding:30px;border-radius:12px;max-width:800px;width:100%;
+      box-shadow:0 0 15px rgba(122,93,240,.4);line-height:1.8;font-size:1rem}
+    .report h2{margin-top:1.5em;color:#b095ff;font-size:1.4rem}
+    .report p{margin:1em 0}
+    table{width:100%;border-collapse:collapse;margin:1.5em 0}
+    table,th,td{border:1px solid #7151cc}
+    th,td{padding:12px;text-align:left}
+    th{background:#3a236f;color:#d1b2ff}
+    td{background:#4a2a8a;color:#ececff}
+    .button-group{text-align:center;padding:20px;background:#2a1b4d}
+    .btn{margin:0 10px;padding:12px 24px;background:linear-gradient(to right,#a88bff,#7a5df0);
+      color:#fff;border:none;border-radius:8px;font-size:1rem;cursor:pointer;text-decoration:none;
+      transition:background .3s}
+    .btn:hover{background:linear-gradient(to right,#7a5df0,#a88bff)}
   </style>
 </head>
 <body>
-  <header>
-    <h1>AI人格测试</h1>
-  </header>
+  <header><h1>AI人格测试</h1></header>
+
   <div class="report-container">
     <div class="report" id="analysis">加载中，请稍候…</div>
   </div>
+
   <div class="button-group">
     <a href="index.html" class="btn">← 返回首页</a>
     <button class="btn" onclick="saveAsImage()">📷 保存为图片</button>
@@ -110,76 +45,75 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
+    /* 取得原始结果 */
     const raw = sessionStorage.getItem('analysisResult') || '';
     let content;
 
-    try {
+    /* 先尝试 JSON 解析（如果是纯 JSON） */
+    try{
       const obj = JSON.parse(raw);
       content = obj.result || raw;
-    } catch (e) {
+    }catch(e){
       content = raw;
     }
 
-    // 彻底清理开头垃圾字符与转义字符
+    /* === 前缀清理：砍掉出现在第一个 ** 之前的所有字符 === */
+    const firstStar = content.indexOf('**');
+    if(firstStar !== -1){ content = content.slice(firstStar); }
+
+    /* 反转义并去首尾引号 */
     content = content
-      .replace(/^\s*{[\s\S]*?"result"\s*:\s*"?/, '')
-      .replace(/"}\s*$/, '')
-      .replace(/\\"/g, '"')
-      .replace(/\\n/g, '\n')
+      .replace(/\\"/g,'"')
+      .replace(/\\n/g,'\n')
+      .replace(/^"+|"+$/g,'')
       .trim();
 
-    function formatContent(text) {
-      // 转换 emoji+粗体标题为 <h2>
-      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
+    /* 将正文转成 HTML */
+    function formatContent(text){
+      /* 1) 把 **标题** → <h2>，并去掉括号说明 */
+      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*([^*]+?)\*\*/g,
+        (_,emoji,title)=>{
+          const clean = title.replace(/（[^）]+）|\([^)]*\)/g,'').trim(); // 去括号
+          return `<h2>${emoji?emoji+' ':''}${clean}</h2>`;
+        });
 
       const lines = text.split('\n');
-      let formatted = '';
-      let inTable = false;
+      let html='',inTable=false;
 
-      lines.forEach(line => {
-        const isDividerLine = /^(\s*\|?\s*-+\s*)+\|?\s*$/.test(line); // markdown分割线判断
-        if (line.includes('|') && !isDividerLine && line.trim().replace(/\|/g, '').trim() !== '') {
-          const cells = line.split('|').map(cell => cell.trim());
-          if (!inTable) {
-            inTable = true;
-            formatted += '<table><tr>';
-            cells.forEach(cell => formatted += `<th>${cell}</th>`);
-            formatted += '</tr>';
-          } else {
-            formatted += '<tr>';
-            cells.forEach(cell => formatted += `<td>${cell}</td>`);
-            formatted += '</tr>';
+      const isDivider = l=>/^(\s*\|?\s*-+\s*)+\|?\s*$/.test(l);
+
+      lines.forEach(line=>{
+        if(line.includes('|') && !isDivider(line) && line.trim().replace(/\|/g,'').trim()!==''){
+          /* 处理表格行 */
+          const cells = line.split('|').map(c=>c.trim()).filter((c,i)=>!(i===0&&c==='')); // 剔掉首个空单元
+          if(!inTable){
+            inTable=true; html+='<table><tr>';
+            cells.forEach(c=>html+=`<th>${c}</th>`); html+='</tr>';
+          }else{
+            html+='<tr>'; cells.forEach(c=>html+=`<td>${c}</td>`); html+='</tr>';
           }
-        } else {
-          if (inTable) {
-            formatted += '</table>';
-            inTable = false;
-          }
-          if (line.trim()) {
-            formatted += `<p>${line}</p>`;
-          }
+        }else{
+          if(inTable){ html+='</table>'; inTable=false; }
+          if(line.trim()) html+=`<p>${line}</p>`;
         }
       });
-
-      if (inTable) formatted += '</table>';
-      return formatted;
+      if(inTable) html+='</table>';
+      return html;
     }
 
-    const analysisElement = document.getElementById('analysis');
-    if (content) {
-      analysisElement.innerHTML = formatContent(content);
-    } else {
-      analysisElement.innerHTML = '<p>暂无结果，请返回首页重试。</p>';
-    }
+    const analysisEl = document.getElementById('analysis');
+    analysisEl.innerHTML = content ? formatContent(content)
+                                   : '<p>暂无结果，请返回首页重试。</p>';
 
-    function saveAsImage() {
-      const container = document.getElementById('analysis');
-      html2canvas(container, { backgroundColor: null }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = '分析报告.png';
-        link.href = canvas.toDataURL();
-        link.click();
-      });
+    /* 保存为图片功能 */
+    function saveAsImage(){
+      html2canvas(document.getElementById('analysis'),{backgroundColor:null})
+        .then(canvas=>{
+          const link=document.createElement('a');
+          link.download='分析报告.png';
+          link.href=canvas.toDataURL();
+          link.click();
+        });
     }
   </script>
 </body>
