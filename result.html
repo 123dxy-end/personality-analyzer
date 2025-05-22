@@ -15,8 +15,9 @@
     header h1{margin:0;font-size:2.2rem;color:#d1b2ff}
     .report-container{flex:1;display:flex;justify-content:center;align-items:flex-start;
       padding:20px;overflow-y:auto}
-    .report{background:#2a1b4d;padding:30px;border-radius:12px;max-width:800px;width:100%;
-      box-shadow:0 0 15px rgba(122,93,240,.4);line-height:1.8;font-size:1rem}
+    .report{background:#2a1b4d;padding:30px;border-radius:12px;
+      max-width:800px;width:100%;box-shadow:0 0 15px rgba(122,93,240,.4);
+      line-height:1.8;font-size:1rem}
     .report h2{margin-top:1.5em;color:#b095ff;font-size:1.4rem}
     .report p{margin:1em 0}
     table{width:100%;border-collapse:collapse;margin:1.5em 0}
@@ -45,11 +46,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script>
-    /* 读取 sessionStorage */
+    /* 1. 读取原始数据 */
     const raw = sessionStorage.getItem('analysisResult') || '';
     let content;
 
-    /* 若为 JSON，则提 result；否则原文返回 */
+    /* 2. 若是 JSON 字符串就提取 result 字段，否则直接用原文 */
     try{
       const obj = JSON.parse(raw);
       content = obj.result || raw;
@@ -57,17 +58,21 @@
       content = raw;
     }
 
-    /* 去掉 {"status":"done","result":" 前缀及结尾 "}，并反转义 */
+    /* 3. 反转义 & 去掉 {"status":"done","result":" 前缀 */
     content = content
-      .replace(/^\s*{[\s\S]*?"result"\s*:\s*"?/, '')
-      .replace(/"}\s*$/, '')
+      .replace(/^\s*\{\s*"status"\s*:\s*"done"\s*,\s*"result"\s*:\s*"?/i,'')
+      .replace(/"}\s*$/,'')
       .replace(/\\"/g,'"')
       .replace(/\\n/g,'\n')
       .trim();
 
-    /* 格式化为 HTML */
+    /* 4. 如果仍然有前缀残留，再次粗暴截到第一个 ** 之后 */
+    const firstStar = content.indexOf('**');
+    if(firstStar!==-1) content = content.slice(firstStar);
+
+    /* 5. 把 Markdown 风格文本转成 HTML（最原始表格逻辑） */
     function formatContent(text){
-      /* **大标题** + Emoji → <h2> */
+      /* 5-1. 章节粗体 → <h2>（保留 emoji） */
       text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*(.+?)\*\*/g,
         (_,e,t)=>`<h2>${e?e+' ':''}${t}</h2>`);
 
@@ -75,15 +80,16 @@
       let html='',inTable=false;
 
       lines.forEach(line=>{
-        if(line.includes('|')){             /* ——— 表格行 ——— */
-          const cells=line.split('|').map(c=>c.trim());
+        if(line.includes('|')){                           /* —— 视为表格行 —— */
+          const cells = line.split('|').map(c=>c.trim());
           if(!inTable){
             inTable=true; html+='<table><tr>';
-            cells.forEach(c=>html+=`<th>${c}</th>`); html+='</tr>';
+            cells.forEach(c=>{ html+=`<th>${c}</th>`; });
+            html+='</tr>';
           }else{
-            html+='<tr>'; cells.forEach(c=>html+=`<td>${c}</td>`); html+='</tr>';
+            html+='<tr>'; cells.forEach(c=>{ html+=`<td>${c}</td>`; }); html+='</tr>';
           }
-        }else{                              /* ——— 普通行 ——— */
+        }else{                                           /* —— 普通段落 —— */
           if(inTable){ html+='</table>'; inTable=false; }
           if(line.trim()) html+=`<p>${line}</p>`;
         }
@@ -92,11 +98,11 @@
       return html;
     }
 
-    /* 渲染 */
+    /* 6. 渲染到页面 */
     document.getElementById('analysis').innerHTML =
       content ? formatContent(content) : '<p>暂无结果，请返回首页重试。</p>';
 
-    /* 保存为图片 */
+    /* 7. 保存为图片 */
     function saveAsImage(){
       html2canvas(document.getElementById('analysis'),{backgroundColor:null})
         .then(canvas=>{
