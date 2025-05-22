@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI人格测试</title>
   <style>
     body {
@@ -120,19 +120,25 @@
       content = raw;
     }
 
-    // 删除前缀干扰字符，如 {"status":"done","result":" 开头等
-    content = content.replace(/^\{.*?"result"\s*:\s*"?/, '').replace(/"}$/, '');
+    // 彻底清理开头垃圾字符与转义字符
+    content = content
+      .replace(/^\s*{[\s\S]*?"result"\s*:\s*"?/, '')
+      .replace(/"}\s*$/, '')
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, '\n')
+      .trim();
 
     function formatContent(text) {
-      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)\s*\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
+      // 转换 emoji+粗体标题为 <h2>
+      text = text.replace(/(🧭|🧱|🎭|🚀|❤️|🧿)?\s*\*\*(.+?)\*\*/g, '<h2>$1 $2</h2>');
 
       const lines = text.split('\n');
       let formatted = '';
       let inTable = false;
 
       lines.forEach(line => {
-        // 忽略纯空白的表格行，防止生成空表头
-        if (line.includes('|') && line.trim().replace(/\|/g, '').trim() !== '') {
+        const isDividerLine = /^(\s*\|?\s*-+\s*)+\|?\s*$/.test(line); // markdown分割线判断
+        if (line.includes('|') && !isDividerLine && line.trim().replace(/\|/g, '').trim() !== '') {
           const cells = line.split('|').map(cell => cell.trim());
           if (!inTable) {
             inTable = true;
